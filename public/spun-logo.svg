@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <!-- Outer orbital white ring with precision gap -->
+  <circle
+    cx="12"
+    cy="12"
+    r="9"
+    stroke="#F6F6F6"
+    stroke-width="1.75"
+    stroke-linecap="round"
+    stroke-dasharray="42 14"
+  />
+  
+  <!-- Inner Spün Amber nucleus dot -->
+  <circle
+    cx="12"
+    cy="12"
+    r="2.5"
+    fill="#F59E0B"
+  />
+</svg>
