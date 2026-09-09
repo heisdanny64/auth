@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { Check, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
+import { Check, SystemRestart as Loader2 } from "iconoir-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -387,7 +387,7 @@ function FinishStep({
           </>
         ) : (
           <>
-            Finish <ChevronRight className="size-4 ml-1" />
+            Finish
           </>
         )}
       </Button>

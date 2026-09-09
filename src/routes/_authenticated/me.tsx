@@ -200,6 +200,11 @@ function Account() {
     const metaProviders = (user?.app_metadata?.["providers"] as string[] | undefined) ?? [];
     if (metaProviders.map((p) => p.toLowerCase()).includes(id)) return true;
 
+    // Supabase does not create an "email" identity entry when a password is set
+    // via updateUser({ password }). Treat email as connected if the user has a
+    // confirmed email — email_confirmed_at means they can sign in with email/password.
+    if (id === "email" && user?.email && user?.email_confirmed_at) return true;
+
     return false;
   }
 

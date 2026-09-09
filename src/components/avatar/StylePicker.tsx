@@ -1,7 +1,7 @@
 import * as React from "react";
 import { AVATAR_STYLES, getStylePreview } from "@/lib/dicebear";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Sparks as Sparkles } from "iconoir-react";
+import { ArrowLeft } from "iconoir-react";
 import { cn } from "@/lib/utils";
 
 export interface StylePickerProps {
@@ -26,7 +26,7 @@ export function StylePicker({
   return (
     <div className={cn("flex flex-col w-full", className)}>
       {/* Top Header */}
-      <div className="flex items-start justify-between gap-4 pb-6 border-b border-border/70">
+      <div className="flex items-start justify-between gap-4 pb-6">
         <div>
           <p className="text-xs font-semibold tracking-wider text-brand uppercase">
             Step 2 · Avatar
@@ -101,32 +101,31 @@ export function StylePicker({
         </div>
       </div>
 
-      {/* Bottom Bar: Continue on Bottom Left, Back on Bottom Right */}
-      <div className="flex items-center justify-between border-t border-border/70 pt-6 mt-2">
-        <Button
-          type="button"
-          variant="hero"
-          size="xl"
-          disabled={!selectedStyle}
-          onClick={onContinue}
-          className="order-1 shadow-md"
-        >
-          Build Avatar <Sparkles className="size-4 ml-2" />
-        </Button>
-
+      {/* Bottom bar: Back left, Build Avatar right */}
+      <div className="flex items-center justify-between pt-6 mt-2">
         {onBack ? (
           <Button
             type="button"
             variant="ghost"
             size="default"
             onClick={onBack}
-            className="order-2 text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4 mr-2" /> Back
           </Button>
         ) : (
-          <div className="order-2" />
+          <div />
         )}
+
+        <Button
+          type="button"
+          variant="hero"
+          size="xl"
+          disabled={!selectedStyle}
+          onClick={onContinue}
+        >
+          Build Avatar
+        </Button>
       </div>
     </div>
   );

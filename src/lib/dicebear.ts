@@ -262,6 +262,7 @@ try {
 }
 
 const excludedKeys = new Set([
+  // Core DiceBear transform options — never user-facing
   "seed",
   "size",
   "flip",
@@ -275,14 +276,47 @@ const excludedKeys = new Set([
   "fontFamily",
   "fontWeight",
   "tags",
+  // Anatomy internals — natural colours, not user-editable
+  "scleraColor",
+  "toothColor",
+  "teethColor",
+  "tongueColor",
+  "throatColor",
+  "uvulaColor",
+  "eyeWhitesColor",
+  "eyeballColor",
+  "lipColor",
+  "nailColor",
+  "gumColor",
 ]);
 
 export function visibleOptionEntries(descriptor: Descriptor): Array<[string, FieldDescriptor]> {
   return Object.entries(descriptor).filter(([key]) => {
-    return !excludedKeys.has(key) && !/Fill$|FillStops$|Angle$|Probability$|Order$/.test(key);
+    if (excludedKeys.has(key)) return false;
+    if (/Fill$|FillStops$|Angle$|Probability$|Order$/.test(key)) return false;
+    return true;
   });
 }
 
+/** Turn an internal option value into a human-readable label.
+ *  "variant01" → "1", "short01" → "Short 1", "longHair" → "Long Hair" */
+export function valueLabel(value: string): string {
+  // Pure variant index: variant01, variant23 etc.
+  if (/^variant\d+$/i.test(value)) {
+    return String(parseInt(value.replace(/^variant/i, ""), 10));
+  }
+  // Split camelCase and digits, then titleize
+  return value
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/([a-zA-Z])(\d+)/g, "$1 $2")
+    .replace(/(\d+)([a-zA-Z])/g, "$1 $2")
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
+// Skin tones — light to deep, 12 steps
 export const SKIN_PALETTE = [
   "#FDDBB4",
   "#F5C99A",
@@ -298,7 +332,9 @@ export const SKIN_PALETTE = [
   "#1A0A05",
 ];
 
+// Hair colours — dark to light, with fantasy accents
 export const HAIR_PALETTE = [
+  "#0A0A0A",
   "#1a1a1a",
   "#2c1a0e",
   "#4a2f1c",
@@ -308,38 +344,44 @@ export const HAIR_PALETTE = [
   "#c68642",
   "#d4a574",
   "#e8d5b0",
-  "#f5f5f5",
+  "#f0f0f0",
+  "#F59E0B",
   "#9b59b6",
   "#1abc9c",
 ];
 
+// General palette — Spün amber anchor, neutrals, semantic accents
 export const GENERAL_PALETTE = [
-  "#D4A017",
-  "#1a1a1a",
-  "#ffffff",
-  "#6b3a2a",
-  "#4a2f1c",
-  "#1abc9c",
+  "#F59E0B",
+  "#F7AE32",
+  "#C98209",
+  "#0A0A0A",
+  "#1D1D1D",
+  "#333333",
+  "#F5F5F5",
+  "#4ADE80",
+  "#60A5FA",
   "#9b59b6",
-  "#e74c3c",
-  "#27ae60",
-  "#3498db",
+  "#E24945",
+  "#1abc9c",
 ];
 
+// Background palette — rich, varied, Spün-aesthetic
 export const BACKGROUND_PALETTE = [
-  "#D4A017",
-  "#B8860B",
-  "#E5A93C",
-  "#E07A5F",
-  "#C0392B",
-  "#8E44AD",
-  "#2980B9",
-  "#16A085",
-  "#27AE60",
-  "#34495E",
-  "#2C3E50",
+  "#030303",
+  "#0F0F0F",
+  "#1a1a1a",
+  "#291E0D",
+  "#3D2B0A",
   "#4A3B32",
-  "#1A1A1A",
+  "#1a2a1a",
+  "#0a1a2a",
+  "#1a0a2a",
+  "#2a1a0a",
+  "#F59E0B",
+  "#C98209",
+  "#4ADE80",
+  "#60A5FA",
   "#F5F5F5",
 ];
 

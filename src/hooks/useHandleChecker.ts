@@ -19,8 +19,24 @@ export interface UseHandleCheckerResult {
   sanitizedHandle: string;
 }
 
-// In-memory cache to make repeated checks instantaneous
-const handleCache = new Map<string, boolean>();
+// TTL-based cache — entries expire after 5 minutes so stale availability
+// results don't persist across long sessions or between users.
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const handleCache = new Map<string, { available: boolean; expiresAt: number }>();
+
+function getCached(handle: string): boolean | null {
+  const entry = handleCache.get(handle);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    handleCache.delete(handle);
+    return null;
+  }
+  return entry.available;
+}
+
+function setCached(handle: string, available: boolean) {
+  handleCache.set(handle, { available, expiresAt: Date.now() + CACHE_TTL_MS });
+}
 
 interface SyncValidationResult {
   isAsyncRequired: boolean;
@@ -76,13 +92,15 @@ function getSyncValidation(normalized: string, normalizedCurrent: string): SyncV
   }
 
   if (handleCache.has(normalized)) {
-    const available = handleCache.get(normalized)!;
-    return {
-      isAsyncRequired: false,
-      status: available ? "available" : "taken",
-      errorMessage: available ? null : "This handle is already taken.",
-      isValid: available,
-    };
+    const available = getCached(normalized);
+    if (available !== null) {
+      return {
+        isAsyncRequired: false,
+        status: available ? "available" : "taken",
+        errorMessage: available ? null : "This handle is already taken.",
+        isValid: available,
+      };
+    }
   }
 
   return {
@@ -146,7 +164,7 @@ export function useHandleChecker({
 
       void isHandleAvailable(normalized, userId)
         .then((available) => {
-          handleCache.set(normalized, available);
+          setCached(normalized, available);
           if (!active || querySeqRef.current !== currentSeq) return;
           setAsyncState({
             handle: normalized,
