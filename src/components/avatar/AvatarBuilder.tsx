@@ -167,7 +167,15 @@ export function AvatarBuilder({
       }
 
       if (probKey) {
-        nextOptions[probKey] = isOptional ? 50 : 100;
+        if (isOptional) {
+          const enabled = Math.random() > 0.5;
+          nextOptions[probKey] = enabled ? 100 : 0;
+          if (!enabled) {
+            delete nextOptions[key];
+          }
+        } else {
+          nextOptions[probKey] = 100;
+        }
       }
     }
 
@@ -237,13 +245,14 @@ export function AvatarBuilder({
       {/* Split layout */}
       <div className="py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr] gap-8 items-start">
         {/* Sticky preview column */}
-        <div className="sticky top-4 z-20 flex flex-col items-center bg-card rounded-3xl p-5 lg:static">
+        <div className="sticky top-4 z-20 flex flex-col items-center bg-card rounded-3xl p-5 border-2 border-border shadow-md lg:static">
           {/* Avatar canvas */}
-          <div className="relative aspect-square w-40 sm:w-48 lg:w-56 rounded-2xl overflow-hidden bg-background flex items-center justify-center p-2">
+          <div className="relative aspect-square w-40 sm:w-48 lg:w-56 rounded-2xl overflow-hidden bg-neutral-950 border-2 border-border flex items-center justify-center p-2">
             <img
               src={liveAvatarUri}
               alt="Live Avatar Preview"
               className="size-full object-contain"
+              style={{ forcedColorAdjust: "none" }}
             />
           </div>
 
@@ -320,18 +329,21 @@ export function AvatarBuilder({
                               key={color}
                               type="button"
                               onClick={() => handleSelectColor(colorKey, color)}
-                              style={{ backgroundColor: color }}
+                              style={{ backgroundColor: color, forcedColorAdjust: "none" }}
                               className={cn(
-                                "size-8 sm:size-9 rounded-full border border-border transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center justify-center cursor-pointer hover:scale-110",
+                                "size-8 sm:size-9 rounded-full border-2 border-border-strong/90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center justify-center cursor-pointer hover:scale-110",
                                 isSelected &&
-                                  "ring-2 ring-brand ring-offset-2 ring-offset-background scale-110",
+                                  "ring-2 ring-brand ring-offset-2 ring-offset-background scale-110 border-white",
                               )}
                               title={color}
                               aria-label={`Select colour ${color}`}
                             >
                               {isSelected ? (
                                 <svg
-                                  className={cn("size-4", light ? "text-neutral-900" : "text-white")}
+                                  className={cn(
+                                    "size-4",
+                                    light ? "text-neutral-900" : "text-white",
+                                  )}
                                   viewBox="0 0 16 16"
                                   fill="none"
                                   stroke="currentColor"
@@ -371,12 +383,7 @@ export function AvatarBuilder({
           <div />
         )}
 
-        <Button
-          type="button"
-          variant="hero"
-          size="xl"
-          onClick={handleContinue}
-        >
+        <Button type="button" variant="hero" size="xl" onClick={handleContinue}>
           {continueLabel} <ArrowRight className="size-4 ml-2" />
         </Button>
       </div>
@@ -393,7 +400,12 @@ interface VariantChipsRowProps {
   variantEntry: [string, FieldDescriptor];
   descriptor: Record<string, FieldDescriptor>;
   isOptional: boolean;
-  onSelectVariant: (key: string, value: string, probKey: string | null, isOptional: boolean) => void;
+  onSelectVariant: (
+    key: string,
+    value: string,
+    probKey: string | null,
+    isOptional: boolean,
+  ) => void;
   onSelectNone: (key: string, probKey: string | null) => void;
 }
 
@@ -418,12 +430,13 @@ const VariantChipsRow = React.memo(function VariantChipsRow({
     return "";
   }, [currentOptions, optKey]);
 
-  const isNoneSelected =
-    isOptional &&
-    (currentOptions[probKey ?? ""] === 0 ||
-      (!selectedVal &&
-        (currentOptions[probKey ?? ""] === undefined ||
-          currentOptions[probKey ?? ""] === 0)));
+  const isNoneSelected = React.useMemo(() => {
+    if (!isOptional) return false;
+    if (probKey && currentOptions[probKey] !== undefined) {
+      return Number(currentOptions[probKey]) === 0;
+    }
+    return !selectedVal || selectedVal === "none";
+  }, [isOptional, probKey, currentOptions, selectedVal]);
 
   return (
     <div className="flex items-center gap-2.5 overflow-x-auto pb-2.5 pt-1">
@@ -433,23 +446,31 @@ const VariantChipsRow = React.memo(function VariantChipsRow({
           type="button"
           onClick={() => onSelectNone(optKey, probKey)}
           className={cn(
-            "group relative flex flex-col items-center justify-center p-1.5 rounded-xl border shrink-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer",
+            "group relative flex flex-col items-center justify-center p-1.5 rounded-xl border-2 shrink-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer",
             isNoneSelected
               ? "border-brand bg-brand-subtle"
               : "border-border bg-card hover:border-border-strong",
           )}
           aria-pressed={isNoneSelected}
         >
-          <div className="size-14 sm:size-16 rounded-lg overflow-hidden bg-background flex flex-col items-center justify-center text-muted-foreground group-hover:text-foreground">
-            <svg className="size-6 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <div className="size-14 sm:size-16 rounded-lg overflow-hidden bg-neutral-950 border border-border/70 flex flex-col items-center justify-center text-muted-foreground group-hover:text-foreground">
+            <svg
+              className="size-6 opacity-60"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <circle cx="12" cy="12" r="9" />
               <path d="M5.636 5.636l12.728 12.728" />
             </svg>
           </div>
-          <span className={cn(
-            "mt-1 text-[10px] tracking-tight font-medium",
-            isNoneSelected ? "text-brand" : "text-muted-foreground",
-          )}>
+          <span
+            className={cn(
+              "mt-1 text-[10px] tracking-tight font-medium",
+              isNoneSelected ? "text-brand" : "text-muted-foreground",
+            )}
+          >
             None
           </span>
         </button>
@@ -488,7 +509,12 @@ interface VariantChipProps {
   probKey: string | null;
   isOptional: boolean;
   isSelected: boolean;
-  onSelectVariant: (key: string, value: string, probKey: string | null, isOptional: boolean) => void;
+  onSelectVariant: (
+    key: string,
+    value: string,
+    probKey: string | null,
+    isOptional: boolean,
+  ) => void;
 }
 
 const VariantChip = React.memo(function VariantChip({
@@ -518,25 +544,28 @@ const VariantChip = React.memo(function VariantChip({
       type="button"
       onClick={() => onSelectVariant(optKey, val, probKey, isOptional)}
       className={cn(
-        "group relative flex flex-col items-center justify-center p-1.5 rounded-xl border shrink-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer",
+        "group relative flex flex-col items-center justify-center p-1.5 rounded-xl border-2 shrink-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer",
         isSelected
           ? "border-brand bg-brand-subtle"
           : "border-border bg-card hover:border-border-strong",
       )}
       aria-pressed={isSelected}
     >
-      <div className="size-14 sm:size-16 rounded-lg overflow-hidden bg-background flex items-center justify-center p-0.5">
+      <div className="size-14 sm:size-16 rounded-lg overflow-hidden bg-neutral-950 border border-border/70 flex items-center justify-center p-0.5">
         <img
           src={chipPreviewUri}
           alt={valueLabel(val)}
           loading="lazy"
           className="size-full object-contain transition-transform group-hover:scale-105"
+          style={{ forcedColorAdjust: "none" }}
         />
       </div>
-      <span className={cn(
-        "mt-1 text-[10px] tracking-tight font-medium truncate max-w-[64px]",
-        isSelected ? "text-brand" : "text-muted-foreground",
-      )}>
+      <span
+        className={cn(
+          "mt-1 text-[10px] tracking-tight font-medium truncate max-w-[64px]",
+          isSelected ? "text-brand" : "text-muted-foreground",
+        )}
+      >
         {valueLabel(val)}
       </span>
     </button>

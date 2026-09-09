@@ -50,12 +50,12 @@ export function AuthShell({
         </header>
 
         <div className="flex flex-1 flex-col justify-center py-10">
-          <div className="rounded-3xl border border-border/70 bg-card/80 p-6 shadow-lift backdrop-blur-sm sm:p-8">
+          <div className="rounded-3xl border-2 border-border bg-card/90 p-6 shadow-lift backdrop-blur-sm sm:p-8">
             {clientLogo ? (
               <img
                 src={clientLogo}
                 alt="App logo"
-                className="mb-5 size-14 rounded-2xl border border-border/60 object-cover shadow-xs"
+                className="mb-5 size-14 rounded-2xl border-2 border-border object-cover shadow-xs"
               />
             ) : null}
             {title ? (

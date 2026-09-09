@@ -232,11 +232,20 @@ function Account() {
     debounceMs: 200,
   });
 
-  const avatarSrc = resolveProfileAvatarDataUri(
-    profile?.avatar_config,
-    currentHandle || currentDisplayName,
-    160,
-  );
+  const oauthAvatarUrl =
+    (user?.user_metadata?.["avatar_url"] as string | undefined) ||
+    (user?.user_metadata?.["picture"] as string | undefined) ||
+    null;
+
+  const avatarSrc =
+    resolveProfileAvatarDataUri(profile?.avatar_config, currentHandle || currentDisplayName, 160) ||
+    oauthAvatarUrl;
+
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [avatarSrc]);
 
   const initials = (currentDisplayName || currentHandle || "S")
     .split(/\s+/)
@@ -416,11 +425,13 @@ function Account() {
         {/* PROFILE SECTION (top of card) */}
         <div className="relative">
           {/* Avatar Circle Frame */}
-          <div className="size-24 sm:size-28 rounded-full border-2 border-border/70 bg-surface/80 p-1 shadow-md flex items-center justify-center overflow-hidden">
-            {avatarSrc ? (
+          <div className="size-24 sm:size-28 rounded-full border-2 border-border bg-surface/80 p-1 shadow-md flex items-center justify-center overflow-hidden">
+            {avatarSrc && !avatarLoadError ? (
               <img
                 src={avatarSrc}
                 alt={currentDisplayName}
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarLoadError(true)}
                 className="size-full rounded-full object-cover"
               />
             ) : (
@@ -436,7 +447,7 @@ function Account() {
             onClick={() => toast.info("Coming soon")}
             aria-label="Edit avatar"
             title="Edit avatar"
-            className="absolute bottom-0 right-0 size-8 rounded-full border border-border bg-card/95 shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            className="absolute bottom-0 right-0 size-8 rounded-full border-2 border-border bg-card/95 shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
             <Pencil className="size-3.5" />
           </button>
@@ -477,7 +488,7 @@ function Account() {
             </span>
           </div>
 
-          <div className="rounded-2xl border border-border/70 bg-surface/30 backdrop-blur-xs divide-y divide-border/40 overflow-hidden shadow-xs">
+          <div className="rounded-2xl border-2 border-border bg-surface/40 backdrop-blur-xs divide-y-2 divide-border/40 overflow-hidden shadow-xs">
             {orderedProviders.map((p) => {
               const connected = isConnected(p.id);
               const isPrimary = p.id === primaryProviderKey;
@@ -488,7 +499,7 @@ function Account() {
                   className="flex items-center justify-between p-3.5 sm:px-4 sm:py-3.5 transition-colors hover:bg-muted/20"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-xl bg-background/90 border border-border/60 flex items-center justify-center text-foreground/90 shrink-0 shadow-xs">
+                    <div className="size-9 rounded-xl bg-background/90 border-2 border-border flex items-center justify-center text-foreground/90 shrink-0 shadow-xs">
                       <ProviderIcon provider={p.id} />
                     </div>
                     <div className="text-left">

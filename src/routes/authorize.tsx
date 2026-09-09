@@ -412,10 +412,15 @@ function Authorize() {
     >
       <div className="space-y-6">
         {/* Active session identifier */}
-        <div className="flex items-center gap-3.5 rounded-2xl border border-border/70 bg-surface/70 p-3.5">
-          <div className="size-12 overflow-hidden rounded-full border border-border bg-surface shrink-0">
+        <div className="flex items-center gap-3.5 rounded-2xl border-2 border-border bg-surface/70 p-3.5">
+          <div className="size-12 overflow-hidden rounded-full border-2 border-border bg-surface shrink-0">
             {avatarSrc ? (
-              <img src={avatarSrc} alt="Your Spün avatar" className="size-full object-cover" />
+              <img
+                src={avatarSrc}
+                alt="Your Spün avatar"
+                referrerPolicy="no-referrer"
+                className="size-full object-cover"
+              />
             ) : (
               <span className="grid size-full place-items-center bg-brand/15 font-display text-lg font-semibold text-brand">
                 {(profile.display_name || profile.handle || "U").charAt(0).toUpperCase()}

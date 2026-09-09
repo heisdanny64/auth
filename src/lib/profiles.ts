@@ -38,13 +38,21 @@ export const RESERVED_HANDLES = new Set([
 ]);
 
 export async function getProfile(userId: string) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-  if (error) throw error;
-  return (data as unknown as ProfileRecord | null) ?? null;
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) {
+      console.warn("Could not fetch profile:", error.message);
+      return null;
+    }
+    return (data as unknown as ProfileRecord | null) ?? null;
+  } catch (err) {
+    console.warn("Exception fetching profile:", err);
+    return null;
+  }
 }
 
 export async function isHandleAvailable(handle: string, userId?: string) {
@@ -75,8 +83,12 @@ export async function completeProfile(profile: {
 }
 
 export async function destinationForUser(userId: string) {
-  const profile = await getProfile(userId);
-  return profile?.handle ? "/me" : "/onboarding";
+  try {
+    const profile = await getProfile(userId);
+    return profile?.handle ? "/me" : "/onboarding";
+  } catch {
+    return "/onboarding";
+  }
 }
 
 export function slugifyHandle(value: string) {

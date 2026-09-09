@@ -68,7 +68,7 @@ function ResetPassword() {
       }
     >
       {done ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-surface p-4">
+        <div className="flex items-center gap-3 rounded-2xl border-2 border-border bg-surface p-4">
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-brand-gradient text-brand-foreground">
             <Check className="size-4" />
           </span>

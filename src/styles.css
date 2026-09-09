@@ -1,5 +1,4 @@
-@import "tailwindcss" source(none);
-@source "../src";
+@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -105,96 +104,147 @@
   --radius: 0.9rem;
 
   /* ── Foundation ───────────────────────────────────────────── */
-  /* #030303 */ --background:   oklch(0.02 0 0);
-  /* #070707 */ --surface:      oklch(0.05 0 0);
-  /* #0F0F0F */ --elevated:     oklch(0.09 0 0);
-  /* rgba(3,3,3,0.6) */ --overlay: oklch(0.02 0 0 / 0.6);
+  /* #030303 */
+  --background: oklch(0.02 0 0);
+  /* #070707 */
+  --surface: oklch(0.05 0 0);
+  /* #0F0F0F */
+  --elevated: oklch(0.09 0 0);
+  /* rgba(3,3,3,0.6) */
+  --overlay: oklch(0.02 0 0 / 0.6);
 
   /* ── Card / popover use surface ──────────────────────────── */
-  --card:                       oklch(0.05 0 0);
-  --card-foreground:            oklch(0.97 0 0);
-  --popover:                    oklch(0.09 0 0);
-  --popover-foreground:         oklch(0.97 0 0);
+  --card: oklch(0.05 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.09 0 0);
+  --popover-foreground: oklch(0.97 0 0);
 
   /* ── Content ──────────────────────────────────────────────── */
-  /* #F5F5F5 */ --foreground:          oklch(0.97 0 0);
-  /* #F5F5F5 */ --content-primary:     oklch(0.97 0 0);
-  /* #BEBEBE */ --content-secondary:   oklch(0.78 0 0);
-  /* #8C8C8C */ --content-muted:       oklch(0.60 0 0);
-  /* #4D4D4D */ --content-disabled:    oklch(0.37 0 0);
+  /* #F5F5F5 */
+  --foreground: oklch(0.97 0 0);
+  /* #F5F5F5 */
+  --content-primary: oklch(0.97 0 0);
+  /* #BEBEBE */
+  --content-secondary: oklch(0.78 0 0);
+  /* #8C8C8C */
+  --content-muted: oklch(0.6 0 0);
+  /* #4D4D4D */
+  --content-disabled: oklch(0.37 0 0);
 
   /* ── Brand ────────────────────────────────────────────────── */
-  /* #F59E0B */ --brand:               oklch(0.75 0.152 72);
-  /* #F59E0B */ --primary:             oklch(0.75 0.152 72);
-  /* #291E0D */ --primary-foreground:  oklch(0.16 0.040 68);
-  /* #291E0D */ --brand-foreground:    oklch(0.16 0.040 68);
-  /* #F7AE32 */ --brand-hover:         oklch(0.78 0.148 78);
-  /* #C98209 */ --brand-active:        oklch(0.63 0.143 64);
-  /* #291E0D */ --brand-subtle:        oklch(0.16 0.040 68);
+  /* #F59E0B */
+  --brand: oklch(0.75 0.152 72);
+  /* #F59E0B */
+  --primary: oklch(0.75 0.152 72);
+  /* Black button text on brand amber */
+  --primary-foreground: #000000;
+  --brand-foreground: #000000;
+  /* #F7AE32 */
+  --brand-hover: oklch(0.78 0.148 78);
+  /* #C98209 */
+  --brand-active: oklch(0.63 0.143 64);
+  /* #291E0D */
+  --brand-subtle: oklch(0.16 0.04 68);
 
   /* ── Secondary / muted / accent (elevated surfaces) ─────── */
-  /* #0F0F0F */ --secondary:             oklch(0.09 0 0);
-  /* #F5F5F5 */ --secondary-foreground:  oklch(0.97 0 0);
-  /* #0F0F0F */ --muted:                 oklch(0.09 0 0);
-  /* #8C8C8C */ --muted-foreground:      oklch(0.60 0 0);
-  /* #0F0F0F */ --accent:                oklch(0.09 0 0);
-  /* #F5F5F5 */ --accent-foreground:     oklch(0.97 0 0);
-  --surface-foreground:         oklch(0.97 0 0);
+  /* #0F0F0F */
+  --secondary: oklch(0.09 0 0);
+  /* #F5F5F5 */
+  --secondary-foreground: oklch(0.97 0 0);
+  /* #0F0F0F */
+  --muted: oklch(0.09 0 0);
+  /* #8C8C8C */
+  --muted-foreground: oklch(0.6 0 0);
+  /* #0F0F0F */
+  --accent: oklch(0.09 0 0);
+  /* #F5F5F5 */
+  --accent-foreground: oklch(0.97 0 0);
+  --surface-foreground: oklch(0.97 0 0);
 
   /* ── Borders ──────────────────────────────────────────────── */
-  /* #1D1D1D */ --border:               oklch(0.15 0 0);
-  /* #1D1D1D */ --border-default:       oklch(0.15 0 0);
-  /* #333333 */ --border-strong:        oklch(0.25 0 0);
-  /* #F59E0B */ --border-focus:         oklch(0.75 0.152 72);
-  /* #1D1D1D */ --input:                oklch(0.15 0 0);
-  /* #F59E0B */ --ring:                 oklch(0.75 0.152 72);
+  /* #1D1D1D — Standard borders and dividers */
+  --border: #1D1D1D;
+  --border-default: #1D1D1D;
+  /* #333333 — Higher-contrast borders and prominent dividers */
+  --border-strong: #333333;
+  /* #F59E0B — Focus indicators and keyboard focus rings */
+  --border-focus: #F59E0B;
+  /* #1D1D1D */
+  --input: #1D1D1D;
+  /* #F59E0B */
+  --ring: #F59E0B;
+  --sidebar-border: #1D1D1D;
+  --color-border: var(--border);
+  --color-input: var(--input);
 
   /* ── Semantic ─────────────────────────────────────────────── */
-  /* #E24945 */ --destructive:           oklch(0.59 0.185 25);
-  /* #F5F5F5 */ --destructive-foreground: oklch(0.97 0 0);
-  /* #E24945 */ --error:                 oklch(0.59 0.185 25);
-  /* #F5F5F5 */ --error-foreground:      oklch(0.97 0 0);
-  /* #4ADE80 */ --success:               oklch(0.80 0.165 152);
-  /* #030303 */ --success-foreground:    oklch(0.02 0 0);
-  /* #EAB308 */ --warning:               oklch(0.74 0.163 84);
-  /* #030303 */ --warning-foreground:    oklch(0.02 0 0);
-  /* #60A5FA */ --info:                  oklch(0.70 0.138 245);
-  /* #030303 */ --info-foreground:       oklch(0.02 0 0);
+  /* #E24945 */
+  --destructive: oklch(0.59 0.185 25);
+  /* #F5F5F5 */
+  --destructive-foreground: oklch(0.97 0 0);
+  /* #E24945 */
+  --error: oklch(0.59 0.185 25);
+  /* #F5F5F5 */
+  --error-foreground: oklch(0.97 0 0);
+  /* #4ADE80 */
+  --success: oklch(0.8 0.165 152);
+  /* #030303 */
+  --success-foreground: oklch(0.02 0 0);
+  /* #EAB308 */
+  --warning: oklch(0.74 0.163 84);
+  /* #030303 */
+  --warning-foreground: oklch(0.02 0 0);
+  /* #60A5FA */
+  --info: oklch(0.7 0.138 245);
+  /* #030303 */
+  --info-foreground: oklch(0.02 0 0);
 
   /* ── Charts ───────────────────────────────────────────────── */
   --chart-1: oklch(0.75 0.152 72);
-  --chart-2: oklch(0.80 0.165 152);
-  --chart-3: oklch(0.70 0.138 245);
+  --chart-2: oklch(0.8 0.165 152);
+  --chart-3: oklch(0.7 0.138 245);
   --chart-4: oklch(0.74 0.163 84);
   --chart-5: oklch(0.59 0.185 25);
 
   /* ── Sidebar ──────────────────────────────────────────────── */
-  --sidebar:                    oklch(0.02 0 0);
-  --sidebar-foreground:         oklch(0.97 0 0);
-  --sidebar-primary:            oklch(0.75 0.152 72);
-  --sidebar-primary-foreground: oklch(0.16 0.040 68);
-  --sidebar-accent:             oklch(0.09 0 0);
-  --sidebar-accent-foreground:  oklch(0.97 0 0);
-  --sidebar-border:             oklch(0.25 0 0);
-  --sidebar-ring:               oklch(0.75 0.152 72);
+  --sidebar: oklch(0.02 0 0);
+  --sidebar-foreground: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.75 0.152 72);
+  --sidebar-primary-foreground: oklch(0.16 0.04 68);
+  --sidebar-accent: oklch(0.09 0 0);
+  --sidebar-accent-foreground: oklch(0.97 0 0);
+  --sidebar-border: #1D1D1D;
+  --sidebar-ring: #F59E0B;
 
   /* ── Gradients & shadows ──────────────────────────────────── */
   --gradient-halo: none;
-  --gradient-brand: linear-gradient(
-    135deg,
-    oklch(0.80 0.148 78) 0%,
-    oklch(0.63 0.143 64) 100%
-  );
+  --gradient-brand: linear-gradient(135deg, oklch(0.8 0.148 78) 0%, oklch(0.63 0.143 64) 100%);
   --shadow-lift: 0 24px 60px -24px oklch(0.02 0 0 / 0.9);
 }
 
+:root,
+html,
 .dark {
-  color-scheme: dark;
+  color-scheme: dark !important;
+  supported-color-schemes: dark;
+}
+
+/* Prevent browser dark mode engines (like Brave Night Mode or Chrome Force Dark) from inverting graphics or buttons */
+img,
+svg,
+button,
+[role="button"] {
+  forced-color-adjust: none;
+}
+
+.bg-brand-gradient,
+.bg-primary {
+  color: #000000 !important;
 }
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    border-color: var(--border);
   }
 
   html {
@@ -211,7 +261,9 @@
     text-rendering: optimizeLegibility;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     font-family: var(--font-display);
     letter-spacing: -0.025em;
   }
@@ -235,18 +287,32 @@
 }
 
 @keyframes onboarding-check-scale {
-  0%   { opacity: 0; transform: scale(0.8); }
-  100% { opacity: 1; transform: scale(1); }
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes draw-circle {
-  0%   { stroke-dashoffset: 176; }
-  100% { stroke-dashoffset: 0; }
+  0% {
+    stroke-dashoffset: 176;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes draw-check {
-  0%   { stroke-dashoffset: 40; }
-  100% { stroke-dashoffset: 0; }
+  0% {
+    stroke-dashoffset: 40;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
 }
 
 .onboarding-check {

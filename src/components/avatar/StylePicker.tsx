@@ -62,15 +62,15 @@ export function StylePicker({
                 type="button"
                 onClick={() => onSelectStyle(style.key)}
                 className={cn(
-                  "group relative flex flex-col items-center p-3 rounded-2xl border transition-all text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 cursor-pointer",
+                  "group relative flex flex-col items-center p-3 rounded-2xl border-2 transition-all text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/70 cursor-pointer",
                   isSelected
                     ? "border-brand bg-brand/10 ring-2 ring-brand/30 shadow-md scale-[1.02]"
-                    : "border-border/60 bg-muted/20 hover:border-border hover:bg-muted/40 hover:scale-[1.01]",
+                    : "border-border bg-card/60 hover:border-border-strong hover:bg-card hover:scale-[1.01]",
                 )}
                 aria-pressed={isSelected}
               >
                 {/* Avatar Preview */}
-                <div className="relative aspect-square w-full max-w-[100px] sm:max-w-[110px] rounded-xl overflow-hidden bg-background/50 flex items-center justify-center p-1 border border-border/40">
+                <div className="relative aspect-square w-full max-w-[100px] sm:max-w-[110px] rounded-xl overflow-hidden bg-background/50 flex items-center justify-center p-1 border border-border/80">
                   <img
                     src={previewUri}
                     alt={style.label}

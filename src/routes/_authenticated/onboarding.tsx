@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { Check, SystemRestart as Loader2 } from "iconoir-react";
+import { Check, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,7 +139,7 @@ function Onboarding() {
           </span>
         </header>
 
-        <section className="overflow-hidden rounded-3xl border border-border/70 bg-card/90 shadow-lift backdrop-blur-sm">
+        <section className="overflow-hidden rounded-3xl border-2 border-border bg-card/95 shadow-lift backdrop-blur-sm">
           <Progress current={phase} />
 
           <div className="p-6 sm:p-10">
@@ -196,12 +196,12 @@ function Progress({ current }: { current: Phase }) {
   const step = current === "identity" ? 1 : current === "style" || current === "builder" ? 2 : 3;
 
   return (
-    <div className="border-b border-border/70 px-5 py-6 sm:px-10">
+    <div className="border-b-2 border-border px-5 py-6 sm:px-10">
       <div className="mx-auto flex max-w-lg items-center">
         {[1, 2, 3].map((item, index) => (
           <div key={item} className="contents">
             <span
-              className={`grid size-9 shrink-0 place-items-center rounded-full border text-sm font-semibold transition-colors ${
+              className={`grid size-9 shrink-0 place-items-center rounded-full border-2 text-sm font-semibold transition-colors ${
                 item < step
                   ? "border-brand bg-brand text-brand-foreground"
                   : item === step
@@ -386,9 +386,7 @@ function FinishStep({
             <Loader2 className="animate-spin size-4 mr-2" /> Saving…
           </>
         ) : (
-          <>
-            Finish
-          </>
+          <>Finish</>
         )}
       </Button>
     </div>

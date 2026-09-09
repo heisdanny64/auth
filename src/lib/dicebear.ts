@@ -131,6 +131,9 @@ export const AVATAR_STYLES = [
 ].map((key) => ({ key, label: titleize(key), attribution: getAttribution(key) !== null }));
 
 export function titleize(key: string) {
+  const lower = key.toLowerCase();
+  if (lower === "rearhair") return "Rear Hair";
+  if (lower === "facialhair") return "Facial Hair";
   return key
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .split(/[-_ ]+/)
@@ -163,17 +166,49 @@ export function renderAvatarDataUri(
   options: AvatarOptions = {},
   size = 128,
 ) {
-  const cleaned = Object.fromEntries(
-    Object.entries({ ...options, seed, size }).filter(
-      ([, value]) => value !== null && value !== undefined && value !== "",
-    ),
-  );
-  return new Avatar(getStyle(key), cleaned).toDataUri();
+  // Extract valid schema options for this specific style.
+  // CRITICAL: DiceBear's OptionsValidator has additionalProperties: false.
+  // If unrecognized properties (especially "style", or arbitrary DB metadata)
+  // are passed to new Avatar(), it throws OptionsValidationError and fails to render.
+  let validKeys: Set<string> | null = null;
+  try {
+    const desc = getOptionDescriptor(key);
+    validKeys = new Set(Object.keys(desc));
+  } catch {
+    // Fallback if descriptor lookup fails
+  }
+
+  const cleaned: Record<string, unknown> = { seed, size };
+  for (const [propKey, value] of Object.entries(options)) {
+    if (
+      propKey === "style" ||
+      propKey === "seed" ||
+      propKey === "size" ||
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
+      continue;
+    }
+    // If descriptor keys are available, only pass valid keys
+    if (validKeys && !validKeys.has(propKey)) {
+      continue;
+    }
+    cleaned[propKey] = value;
+  }
+
+  const avatar = new Avatar(getStyle(key), cleaned);
+  let svg = avatar.toString();
+  // Ensure the SVG explicitly instructs browsers never to invert colors in auto-dark modes
+  if (!svg.includes("forced-color-adjust")) {
+    svg = svg.replace("<svg ", '<svg style="forced-color-adjust: none; color-scheme: normal;" ');
+  }
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 export function detectAvatarStyle(config: Record<string, unknown>): string | null {
   if (typeof config["style"] === "string" && config["style"].trim()) {
-    return config["style"];
+    return config["style"].trim();
   }
 
   const configKeys = Object.keys(config).filter(
@@ -210,6 +245,21 @@ export function resolveProfileAvatarDataUri(
   size = 128,
 ): string | null {
   if (!config) return null;
+
+  // Direct image URL or data URI support (e.g. Google profile picture, uploaded avatar)
+  if (typeof config === "string") {
+    const trimmed = config.trim();
+    if (
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("data:image/") ||
+      trimmed.startsWith("blob:") ||
+      trimmed.startsWith("/")
+    ) {
+      return trimmed;
+    }
+  }
+
   let parsedConfig: Record<string, unknown>;
   if (typeof config === "string") {
     try {
@@ -223,6 +273,21 @@ export function resolveProfileAvatarDataUri(
     return null;
   }
 
+  // Check if parsedConfig contains a direct image URL property
+  for (const urlKey of ["avatar_url", "avatarUrl", "picture", "url", "src", "image"]) {
+    const val = parsedConfig[urlKey];
+    if (
+      typeof val === "string" &&
+      (val.startsWith("http://") ||
+        val.startsWith("https://") ||
+        val.startsWith("data:image/") ||
+        val.startsWith("blob:") ||
+        val.startsWith("/"))
+    ) {
+      return val;
+    }
+  }
+
   const style = detectAvatarStyle(parsedConfig);
   if (!style) return null;
   const seed =
@@ -231,7 +296,8 @@ export function resolveProfileAvatarDataUri(
       : seedFallback;
   try {
     return renderAvatarDataUri(style, seed, parsedConfig, size);
-  } catch {
+  } catch (err) {
+    console.error("Failed to render avatar data URI:", err);
     return null;
   }
 }
@@ -334,58 +400,61 @@ export const SKIN_PALETTE = [
 
 // Hair colours — dark to light, with fantasy accents
 export const HAIR_PALETTE = [
-  "#0A0A0A",
-  "#1a1a1a",
-  "#2c1a0e",
-  "#4a2f1c",
-  "#6b3a2a",
+  "#000000",
+  "#1A1A1A",
+  "#2C1A0E",
+  "#4A2F1C",
+  "#6B3A2A",
   "#8B6343",
-  "#a0522d",
-  "#c68642",
-  "#d4a574",
-  "#e8d5b0",
-  "#f0f0f0",
+  "#A0522D",
+  "#C68642",
+  "#D4A574",
+  "#E8D5B0",
+  "#FFFFFF",
   "#F59E0B",
-  "#9b59b6",
-  "#1abc9c",
+  "#9B59B6",
+  "#1ABC9C",
 ];
 
-// General palette — Spün amber anchor, neutrals, semantic accents
+// General palette — true black, pure white, Spün amber anchor, neutrals, semantic accents
 export const GENERAL_PALETTE = [
+  "#000000",
+  "#FFFFFF",
+  "#333333",
   "#F59E0B",
   "#F7AE32",
   "#C98209",
-  "#0A0A0A",
-  "#1D1D1D",
-  "#333333",
-  "#F5F5F5",
   "#4ADE80",
   "#60A5FA",
-  "#9b59b6",
+  "#9B59B6",
   "#E24945",
-  "#1abc9c",
+  "#1ABC9C",
+  "#E8D5B0",
 ];
 
 // Background palette — rich, varied, Spün-aesthetic
 export const BACKGROUND_PALETTE = [
   "#030303",
+  "#000000",
+  "#FFFFFF",
   "#0F0F0F",
-  "#1a1a1a",
+  "#1A1A1A",
   "#291E0D",
   "#3D2B0A",
   "#4A3B32",
-  "#1a2a1a",
-  "#0a1a2a",
-  "#1a0a2a",
-  "#2a1a0a",
+  "#1A2A1A",
+  "#0A1A2A",
+  "#1A0A2A",
+  "#2A1A0A",
   "#F59E0B",
   "#C98209",
   "#4ADE80",
   "#60A5FA",
-  "#F5F5F5",
 ];
 
 export const OPTIONAL_FEATURES = new Set([
+  "rearhair",
+  "rear_hair",
   "beard",
   "facialhair",
   "facial",
@@ -432,6 +501,7 @@ export const FEATURE_ORDER = [
   "skin",
   "head",
   "hair",
+  "rearhair",
   "ears",
   "ear",
   "eyebrows",

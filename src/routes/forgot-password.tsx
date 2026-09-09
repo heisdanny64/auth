@@ -62,7 +62,7 @@ function ForgotPassword() {
     >
       {sent ? (
         <div className="space-y-5">
-          <div className="flex items-start gap-3 rounded-2xl border border-border/70 bg-surface p-4">
+          <div className="flex items-start gap-3 rounded-2xl border-2 border-border bg-surface p-4">
             <MailCheck className="mt-0.5 size-5 text-brand" />
             <p className="text-sm leading-relaxed text-muted-foreground">
               The link expires in 30 minutes. Didn't get it? Check spam, or resend below.

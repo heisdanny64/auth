@@ -9,16 +9,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        default: "bg-primary text-black shadow hover:bg-primary/90 border-2 border-transparent",
+        destructive:
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 border-2 border-transparent",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+          "border-2 border-border-strong/80 bg-background/80 text-foreground shadow-sm hover:bg-accent hover:border-foreground/50 hover:text-accent-foreground",
+        secondary:
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 border-2 border-border",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        hero: "bg-brand-gradient text-brand-foreground font-semibold shadow-lift hover:brightness-105 active:brightness-95",
+        hero: "bg-brand-gradient text-black font-semibold shadow-lift hover:brightness-105 active:brightness-95 border-2 border-transparent",
         social:
-          "border border-border bg-surface text-surface-foreground hover:bg-accent hover:border-brand/40",
+          "border-2 border-border-strong/80 bg-surface text-surface-foreground hover:bg-accent hover:border-brand/60 shadow-xs",
       },
       size: {
         default: "h-9 px-4 py-2",
@@ -41,10 +43,19 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, style, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    const isDarkTextVariant = variant === "hero" || variant === "default" || (!variant && true);
+    const mergedStyle = isDarkTextVariant
+      ? { color: "#000000", forcedColorAdjust: "none" as const, ...style }
+      : style;
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <Comp
+        className={cn(buttonVariants({ variant, size, className }))}
+        style={mergedStyle}
+        ref={ref}
+        {...props}
+      />
     );
   },
 );
