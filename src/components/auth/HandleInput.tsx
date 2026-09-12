@@ -1,5 +1,5 @@
 import { Label } from "@/components/ui/label";
-import { SystemRestart as Loader2, Check, Xmark as X } from "iconoir-react";
+import { Loading03Icon as Loader2, Tick02Icon as Check, Cancel01Icon as X } from "hugeicons-react";
 import type { UseHandleCheckerResult } from "@/hooks/useHandleChecker";
 import type { ReactNode } from "react";
 

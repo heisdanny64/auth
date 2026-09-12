@@ -163,17 +163,17 @@
 
   /* ── Borders ──────────────────────────────────────────────── */
   /* #1D1D1D — Standard borders and dividers */
-  --border: #1D1D1D;
-  --border-default: #1D1D1D;
+  --border: #1d1d1d;
+  --border-default: #1d1d1d;
   /* #333333 — Higher-contrast borders and prominent dividers */
   --border-strong: #333333;
   /* #F59E0B — Focus indicators and keyboard focus rings */
-  --border-focus: #F59E0B;
+  --border-focus: #f59e0b;
   /* #1D1D1D */
-  --input: #1D1D1D;
+  --input: #1d1d1d;
   /* #F59E0B */
-  --ring: #F59E0B;
-  --sidebar-border: #1D1D1D;
+  --ring: #f59e0b;
+  --sidebar-border: #1d1d1d;
   --color-border: var(--border);
   --color-input: var(--input);
 
@@ -213,8 +213,8 @@
   --sidebar-primary-foreground: oklch(0.16 0.04 68);
   --sidebar-accent: oklch(0.09 0 0);
   --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: #1D1D1D;
-  --sidebar-ring: #F59E0B;
+  --sidebar-border: #1d1d1d;
+  --sidebar-ring: #f59e0b;
 
   /* ── Gradients & shadows ──────────────────────────────────── */
   --gradient-halo: none;

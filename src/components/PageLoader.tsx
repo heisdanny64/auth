@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { SystemRestart as Loader2 } from "iconoir-react";
+import { Loading03Icon as Loader2 } from "hugeicons-react";
 
 interface PageLoadingSpinnerProps {
   message?: string;

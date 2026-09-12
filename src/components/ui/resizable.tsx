@@ -1,4 +1,4 @@
-import { Drag as GripVertical } from "iconoir-react";
+import { Drag01Icon as GripVertical } from "hugeicons-react";
 import { Group, Panel, Separator } from "react-resizable-panels";
 
 import { cn } from "@/lib/utils";

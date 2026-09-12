@@ -1,6 +1,6 @@
 import * as React from "react";
 import useEmblaCarousel, { type UseEmblaCarouselType } from "embla-carousel-react";
-import { ArrowLeft, ArrowRight } from "iconoir-react";
+import { ArrowLeft01Icon as ArrowLeft, ArrowRight01Icon as ArrowRight } from "hugeicons-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";

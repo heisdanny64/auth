@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import {
-  NavArrowDown as ChevronDownIcon,
-  NavArrowLeft as ChevronLeftIcon,
-  NavArrowRight as ChevronRightIcon,
-} from "iconoir-react";
+  ArrowDown01Icon as ChevronDownIcon,
+  ArrowLeft01Icon as ChevronLeftIcon,
+  ArrowRight01Icon as ChevronRightIcon,
+} from "hugeicons-react";
 import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 
 import { cn } from "@/lib/utils";

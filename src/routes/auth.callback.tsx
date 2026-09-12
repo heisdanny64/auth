@@ -1,6 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, SystemRestart as Loader2, WarningTriangle as TriangleAlert } from "iconoir-react";
+import {
+  Tick02Icon as Check,
+  Loading03Icon as Loader2,
+  Alert02Icon as TriangleAlert,
+} from "hugeicons-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";

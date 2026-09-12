@@ -52,7 +52,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {error?.message ||
+            "Something went wrong on our end. You can try refreshing or head back home."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -198,12 +199,18 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-    });
-    return () => data.subscription.unsubscribe();
+    let sub: { subscription?: { unsubscribe?: () => void } } | null = null;
+    try {
+      const authListener = supabase.auth.onAuthStateChange((event) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
+        router.invalidate();
+        if (event === "SIGNED_IN") queryClient.invalidateQueries();
+      });
+      sub = authListener.data;
+    } catch (err) {
+      console.warn("RootComponent auth listener warning:", err);
+    }
+    return () => sub?.subscription?.unsubscribe?.();
   }, [router, queryClient]);
 
   return (

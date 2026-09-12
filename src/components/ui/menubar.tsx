@@ -1,6 +1,10 @@
 import * as React from "react";
 import * as MenubarPrimitive from "@radix-ui/react-menubar";
-import { Check, NavArrowRight as ChevronRight, Circle } from "iconoir-react";
+import {
+  Tick02Icon as Check,
+  ArrowRight01Icon as ChevronRight,
+  CircleIcon as Circle,
+} from "hugeicons-react";
 
 import { cn } from "@/lib/utils";
 

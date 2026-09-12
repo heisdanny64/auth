@@ -9,18 +9,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-black shadow hover:bg-primary/90 border-2 border-transparent",
+        default: "bg-primary text-black shadow hover:bg-primary/90 border border-transparent",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 border-2 border-transparent",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 border border-transparent",
         outline:
-          "border-2 border-border-strong/80 bg-background/80 text-foreground shadow-sm hover:bg-accent hover:border-foreground/50 hover:text-accent-foreground",
+          "border border-border-strong/80 bg-background/80 text-foreground shadow-sm hover:bg-accent hover:border-foreground/50 hover:text-accent-foreground",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 border-2 border-border",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 border border-border",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        hero: "bg-brand-gradient text-black font-semibold shadow-lift hover:brightness-105 active:brightness-95 border-2 border-transparent",
+        hero: "bg-brand-gradient text-black font-semibold shadow-lift hover:brightness-105 active:brightness-95 border border-transparent",
         social:
-          "border-2 border-border-strong/80 bg-surface text-surface-foreground hover:bg-accent hover:border-brand/60 shadow-xs",
+          "border border-border-strong/80 bg-surface text-surface-foreground hover:bg-accent hover:border-brand/60 shadow-xs",
       },
       size: {
         default: "h-9 px-4 py-2",

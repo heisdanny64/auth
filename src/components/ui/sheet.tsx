@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cva, type VariantProps } from "class-variance-authority";
-import { Xmark as X } from "iconoir-react";
+import { Cancel01Icon as X } from "hugeicons-react";
 
 import { cn } from "@/lib/utils";
 

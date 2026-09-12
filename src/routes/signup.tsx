@@ -8,11 +8,11 @@ import { toast } from "sonner";
 import { signUpWithEmail } from "@/lib/auth";
 
 export const Route = createFileRoute("/signup")({
-  validateSearch: (search) => ({
-    client_id: typeof search.client_id === "string" ? search.client_id : undefined,
-    redirect_uri: typeof search.redirect_uri === "string" ? search.redirect_uri : undefined,
-    state: typeof search.state === "string" ? search.state : undefined,
-    prompt: search.prompt === "none" || search.prompt === "login" ? search.prompt : undefined,
+  validateSearch: (search: Record<string, unknown> = {}) => ({
+    client_id: typeof search?.client_id === "string" ? search.client_id : undefined,
+    redirect_uri: typeof search?.redirect_uri === "string" ? search.redirect_uri : undefined,
+    state: typeof search?.state === "string" ? search.state : undefined,
+    prompt: search?.prompt === "none" || search?.prompt === "login" ? search.prompt : undefined,
   }),
   head: () => ({
     meta: [
@@ -37,9 +37,10 @@ function SignUp() {
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
   const navigate = useNavigate();
-  const search = Route.useSearch();
+  const rawSearch = Route.useSearch();
+  const search = rawSearch ?? {};
   const returnTo =
-    search.client_id && search.redirect_uri
+    search?.client_id && search?.redirect_uri
       ? `/authorize?client_id=${encodeURIComponent(search.client_id)}&redirect_uri=${encodeURIComponent(search.redirect_uri)}${search.state ? `&state=${encodeURIComponent(search.state)}` : ""}${search.prompt ? `&prompt=${search.prompt}` : ""}&auth_completed=1`
       : "/onboarding";
 
@@ -55,7 +56,7 @@ function SignUp() {
         returnTo,
       );
       if (data.session) {
-        if (search.client_id && search.redirect_uri) {
+        if (search?.client_id && search?.redirect_uri) {
           navigate({
             to: "/authorize",
             search: {

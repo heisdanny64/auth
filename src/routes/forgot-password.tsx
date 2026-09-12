@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Field } from "@/components/auth/Field";
 import { Button } from "@/components/ui/button";
-import { MailOpen as MailCheck } from "iconoir-react";
+import { MailOpen01Icon as MailCheck } from "hugeicons-react";
 import { toast } from "sonner";
 import { sendPasswordReset } from "@/lib/auth";
 

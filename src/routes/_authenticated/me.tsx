@@ -1,20 +1,26 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import {
-  EditPencil as Pencil,
-  Check,
-  Xmark as X,
-  WarningTriangle as AlertTriangle,
-  SystemRestart as Loader2,
-  Mail,
-} from "iconoir-react";
+  UserEdit01Icon,
+  Edit04Icon,
+  Add01Icon,
+  Tick02Icon as Check,
+  Cancel01Icon as X,
+  Alert02Icon as AlertTriangle,
+  Loading03Icon as Loader2,
+  Mail01Icon as Mail,
+  ViewIcon,
+  ViewOffIcon,
+} from "hugeicons-react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HandleInput } from "@/components/auth/HandleInput";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -36,6 +42,7 @@ import { resolveProfileAvatarDataUri } from "@/lib/dicebear";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/me")({
+  ssr: false,
   loader: async () => {
     const {
       data: { user },
@@ -144,9 +151,15 @@ function Account() {
   const [disconnectTarget, setDisconnectTarget] = useState<ProviderConfig | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
+  // Avatar Edit Modal state
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [avatarEditChoice, setAvatarEditChoice] = useState<"refine" | "fresh" | null>("refine");
+  const [navigatingAvatar, setNavigatingAvatar] = useState(false);
+
   // Connect Email Modal state (if user signed up via OAuth and wants to add email/password)
   const [connectEmailModalOpen, setConnectEmailModalOpen] = useState(false);
   const [emailPassword, setEmailPassword] = useState("");
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [connectingEmail, setConnectingEmail] = useState(false);
 
   // Fetch profile and identities
@@ -246,6 +259,14 @@ function Account() {
   useEffect(() => {
     setAvatarLoadError(false);
   }, [avatarSrc]);
+
+  const isMountedRef = useRef(false);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const initials = (currentDisplayName || currentHandle || "S")
     .split(/\s+/)
@@ -431,7 +452,11 @@ function Account() {
                 src={avatarSrc}
                 alt={currentDisplayName}
                 referrerPolicy="no-referrer"
-                onError={() => setAvatarLoadError(true)}
+                onError={() => {
+                  if (isMountedRef.current) {
+                    setAvatarLoadError(true);
+                  }
+                }}
                 className="size-full rounded-full object-cover"
               />
             ) : (
@@ -441,16 +466,31 @@ function Account() {
             )}
           </div>
 
-          {/* Edit Icon Overlay on Avatar (bottom-right corner) */}
-          <button
-            type="button"
-            onClick={() => toast.info("Coming soon")}
-            aria-label="Edit avatar"
-            title="Edit avatar"
-            className="absolute bottom-0 right-0 size-8 rounded-full border-2 border-border bg-card/95 shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            <Pencil className="size-3.5" />
-          </button>
+          {/* Edit/Add Icon Overlay on Avatar (bottom-right corner) */}
+          {profile?.avatar_config ? (
+            <button
+              type="button"
+              onClick={() => {
+                setAvatarEditChoice("refine");
+                setAvatarModalOpen(true);
+              }}
+              aria-label="Edit avatar"
+              title="Edit avatar"
+              className="absolute bottom-0 right-0 size-8 rounded-full border border-border bg-card/95 shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              <UserEdit01Icon className="size-3.5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/avatar", search: { mode: "fresh" } })}
+              aria-label="Add avatar"
+              title="Add avatar"
+              className="absolute bottom-0 right-0 size-8 rounded-full border border-border bg-card/95 shadow-sm flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              <Add01Icon className="size-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Display Name + Edit Icon */}
@@ -465,7 +505,7 @@ function Account() {
             title="Edit profile"
             className="p-1 rounded-md text-primary/80 hover:text-primary transition-colors cursor-pointer"
           >
-            <Pencil className="size-4" />
+            <Edit04Icon className="size-4" />
           </button>
         </div>
 
@@ -635,6 +675,91 @@ function Account() {
         </DialogContent>
       </Dialog>
 
+      {/* AVATAR EDIT PROCEED MODAL */}
+      <Dialog open={avatarModalOpen} onOpenChange={setAvatarModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>How&apos;d you like to proceed?</DialogTitle>
+          </DialogHeader>
+
+          <RadioGroup
+            value={avatarEditChoice ?? ""}
+            onValueChange={(val) => setAvatarEditChoice(val as "refine" | "fresh")}
+            className="space-y-3 py-3"
+          >
+            <label
+              htmlFor="choice-refine"
+              className={cn(
+                "flex items-start gap-3.5 rounded-xl border p-4 text-left transition-colors cursor-pointer",
+                avatarEditChoice === "refine"
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                  : "border-border bg-card hover:bg-surface/60",
+              )}
+            >
+              <RadioGroupItem value="refine" id="choice-refine" className="mt-0.5" />
+              <div className="space-y-1">
+                <div className="text-sm font-semibold text-foreground">Refine current</div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Edit your existing avatar. Keep your current style, seed, and selected features.
+                </p>
+              </div>
+            </label>
+
+            <label
+              htmlFor="choice-fresh"
+              className={cn(
+                "flex items-start gap-3.5 rounded-xl border p-4 text-left transition-colors cursor-pointer",
+                avatarEditChoice === "fresh"
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                  : "border-border bg-card hover:bg-surface/60",
+              )}
+            >
+              <RadioGroupItem value="fresh" id="choice-fresh" className="mt-0.5" />
+              <div className="space-y-1">
+                <div className="text-sm font-semibold text-foreground">Start fresh</div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Discard your current avatar and begin from scratch with a new style.
+                </p>
+              </div>
+            </label>
+          </RadioGroup>
+
+          <DialogFooter className="mt-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={navigatingAvatar}
+              onClick={() => setAvatarModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={!avatarEditChoice || navigatingAvatar}
+              onClick={async () => {
+                const choice = avatarEditChoice ?? "refine";
+                if (choice === "fresh" && user?.id && typeof window !== "undefined") {
+                  try {
+                    localStorage.removeItem(`spun_avatar_draft_${user.id}`);
+                  } catch (e) {
+                    console.warn("Failed to clear local draft before fresh start:", e);
+                  }
+                }
+                setNavigatingAvatar(true);
+                try {
+                  await navigate({ to: "/avatar", search: { mode: choice } });
+                  setAvatarModalOpen(false);
+                } finally {
+                  setNavigatingAvatar(false);
+                }
+              }}
+            >
+              {navigatingAvatar ? "Loading…" : "Continue"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* DISCONNECT CONFIRMATION MODAL */}
       <Dialog
         open={disconnectTarget !== null}
@@ -689,14 +814,28 @@ function Account() {
           <div className="space-y-4 py-2">
             <div className="space-y-2 text-left">
               <Label htmlFor="connect-email-password">New Password</Label>
-              <Input
-                id="connect-email-password"
-                type="password"
-                placeholder="At least 6 characters"
-                value={emailPassword}
-                onChange={(e) => setEmailPassword(e.target.value)}
-                className="bg-surface/50 rounded-md"
-              />
+              <div className="relative">
+                <Input
+                  id="connect-email-password"
+                  type={showEmailPassword ? "text" : "password"}
+                  placeholder="At least 6 characters"
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                  className="bg-surface/50 rounded-md pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowEmailPassword((v) => !v)}
+                  aria-label={showEmailPassword ? "Hide password" : "Show password"}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                >
+                  {showEmailPassword ? (
+                    <ViewOffIcon className="size-4" />
+                  ) : (
+                    <ViewIcon className="size-4" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

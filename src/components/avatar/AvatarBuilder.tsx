@@ -16,7 +16,11 @@ import {
   type FieldDescriptor,
 } from "@/lib/dicebear";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Shuffle } from "iconoir-react";
+import {
+  ArrowLeft01Icon as ArrowLeft,
+  ArrowRight01Icon as ArrowRight,
+  ShuffleIcon as Shuffle,
+} from "hugeicons-react";
 import { cn } from "@/lib/utils";
 
 export interface AvatarBuilderProps {
@@ -25,10 +29,14 @@ export interface AvatarBuilderProps {
   seed?: string;
   userHandle?: string;
   onContinue: (config: { style: string; seed: string; [key: string]: unknown }) => void;
+  onChange?: (config: { style: string; seed: string; [key: string]: unknown }) => void;
   onBack?: () => void;
   onSkip?: () => void;
   showSkip?: boolean;
   continueLabel?: string;
+  continueDisabled?: boolean;
+  showContinueArrow?: boolean;
+  stepLabel?: string;
   className?: string;
 }
 
@@ -85,14 +93,18 @@ export function AvatarBuilder({
   seed,
   userHandle,
   onContinue,
+  onChange,
   onBack,
   onSkip,
   showSkip = true,
   continueLabel = "Continue",
+  continueDisabled = false,
+  showContinueArrow = true,
+  stepLabel = "Step 2 · Avatar Builder",
   className,
 }: AvatarBuilderProps) {
   const [currentSeed, setCurrentSeed] = React.useState<string>(
-    seed || userHandle || "spun-default",
+    seed || (initialOptions?.seed as string) || userHandle || "spun-default",
   );
 
   const descriptor = React.useMemo(() => getOptionDescriptor(style), [style]);
@@ -100,6 +112,19 @@ export function AvatarBuilder({
   const [options, setOptions] = React.useState<AvatarOptions>(() =>
     buildCleanInitialOptions(initialOptions, descriptor),
   );
+
+  const onChangeRef = React.useRef(onChange);
+  onChangeRef.current = onChange;
+
+  const isFirstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const finalSeed = userHandle || currentSeed;
+    onChangeRef.current?.({ ...options, style, seed: finalSeed });
+  }, [options, style, currentSeed, userHandle]);
 
   const visibleEntries = React.useMemo(() => visibleOptionEntries(descriptor), [descriptor]);
   const attribution = React.useMemo(() => getAttribution(style), [style]);
@@ -219,9 +244,7 @@ export function AvatarBuilder({
       {/* Top header */}
       <div className="flex items-start justify-between gap-4 pb-6">
         <div>
-          <p className="text-xs font-semibold tracking-wider text-brand uppercase">
-            Step 2 · Avatar Builder
-          </p>
+          <p className="text-xs font-semibold tracking-wider text-brand uppercase">{stepLabel}</p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-display">
             Tune your avatar.
           </h2>
@@ -242,140 +265,134 @@ export function AvatarBuilder({
         ) : null}
       </div>
 
-      {/* Split layout */}
-      <div className="py-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[320px_1fr] gap-8 items-start">
-        {/* Sticky preview column */}
-        <div className="sticky top-4 z-20 flex flex-col items-center bg-card rounded-3xl p-5 border-2 border-border shadow-md lg:static">
-          {/* Avatar canvas */}
-          <div className="relative aspect-square w-40 sm:w-48 lg:w-56 rounded-2xl overflow-hidden bg-neutral-950 border-2 border-border flex items-center justify-center p-2">
-            <img
-              src={liveAvatarUri}
-              alt="Live Avatar Preview"
-              className="size-full object-contain"
-              style={{ forcedColorAdjust: "none" }}
-            />
-          </div>
-
-          {/* Style name & attribution */}
-          <div className="mt-3 text-center">
-            <span className="text-sm font-semibold tracking-tight text-foreground">
-              {titleize(style)}
-            </span>
-            {attribution ? (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                Style by{" "}
-                <a
-                  href={attribution.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-brand hover:underline font-medium"
-                >
-                  {attribution.author}
-                </a>
-              </p>
-            ) : null}
-          </div>
-
-          {/* Randomise button */}
-          <Button
-            type="button"
-            variant="outline"
-            size="default"
-            onClick={handleRandomise}
-            className="mt-4 w-full max-w-[220px] rounded-xl"
-          >
-            <Shuffle className="size-4 mr-2" /> Randomise
-          </Button>
+      {/* Preview Section: Seamlessly integrated at the top */}
+      <div className="flex flex-col items-center py-4 mb-6">
+        {/* Avatar canvas */}
+        <div className="relative aspect-square w-36 sm:w-44 lg:w-48 rounded-2xl overflow-hidden bg-neutral-950 border border-border flex items-center justify-center p-2 shadow-inner">
+          <img
+            src={liveAvatarUri}
+            alt="Live Avatar Preview"
+            className="size-full object-contain"
+            style={{ forcedColorAdjust: "none" }}
+          />
         </div>
 
-        {/* Feature rows */}
-        <div className="flex flex-col gap-7">
-          {featureGroups.map((group) => {
-            const isOptional = isOptionalFeature(group.feature);
+        {/* Style name & attribution */}
+        <div className="mt-3 text-center">
+          <span className="text-sm font-semibold tracking-tight text-foreground">
+            {titleize(style)}
+          </span>
+          {attribution ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Style by{" "}
+              <a
+                href={attribution.link}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand hover:underline font-medium"
+              >
+                {attribution.author}
+              </a>
+            </p>
+          ) : null}
+        </div>
 
-            return (
-              <div key={group.feature}>
-                <h3 className="text-sm font-semibold tracking-tight text-foreground mb-3 font-display">
-                  {titleize(group.feature)}
-                </h3>
+        {/* Randomise button */}
+        <Button
+          type="button"
+          variant="outline"
+          size="default"
+          onClick={handleRandomise}
+          className="mt-3.5 w-full max-w-[200px] rounded-xl text-xs sm:text-sm cursor-pointer"
+        >
+          <Shuffle className="size-4 mr-2" /> Randomise
+        </Button>
+      </div>
 
-                {group.variantEntry ? (
-                  <VariantChipsRow
-                    style={style}
-                    currentSeed={currentSeed}
-                    currentOptions={options}
-                    variantEntry={group.variantEntry}
-                    descriptor={descriptor}
-                    isOptional={isOptional}
-                    onSelectVariant={handleSelectVariant}
-                    onSelectNone={handleSelectNone}
-                  />
-                ) : null}
+      {/* Feature rows in a dedicated scrollable section */}
+      <div className="max-h-[460px] sm:max-h-[520px] lg:max-h-[600px] overflow-y-auto px-2 sm:px-3.5 py-2 space-y-7 focus:outline-none">
+        {featureGroups.map((group) => {
+          const isOptional = isOptionalFeature(group.feature);
 
-                {group.colorEntries.map(([colorKey]) => {
-                  const palette = paletteFor(colorKey);
-                  const selectedColor = normalizeColor(options[colorKey]);
+          return (
+            <div key={group.feature} className="space-y-3">
+              <h3 className="text-sm font-semibold tracking-tight text-foreground font-display">
+                {titleize(group.feature)}
+              </h3>
 
-                  return (
-                    <div key={colorKey} className="mt-3">
-                      <div className="flex flex-wrap gap-2.5 items-center pt-1">
-                        {palette.map((color) => {
-                          const norm = normalizeColor(color);
-                          const isSelected = selectedColor === norm;
-                          const light = isLightColor(color);
+              {group.variantEntry ? (
+                <VariantChipsRow
+                  style={style}
+                  currentSeed={currentSeed}
+                  currentOptions={options}
+                  variantEntry={group.variantEntry}
+                  descriptor={descriptor}
+                  isOptional={isOptional}
+                  onSelectVariant={handleSelectVariant}
+                  onSelectNone={handleSelectNone}
+                />
+              ) : null}
 
-                          return (
-                            <button
-                              key={color}
-                              type="button"
-                              onClick={() => handleSelectColor(colorKey, color)}
-                              style={{ backgroundColor: color, forcedColorAdjust: "none" }}
-                              className={cn(
-                                "size-8 sm:size-9 rounded-full border-2 border-border-strong/90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center justify-center cursor-pointer hover:scale-110",
-                                isSelected &&
-                                  "ring-2 ring-brand ring-offset-2 ring-offset-background scale-110 border-white",
-                              )}
-                              title={color}
-                              aria-label={`Select colour ${color}`}
-                            >
-                              {isSelected ? (
-                                <svg
-                                  className={cn(
-                                    "size-4",
-                                    light ? "text-neutral-900" : "text-white",
-                                  )}
-                                  viewBox="0 0 16 16"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                >
-                                  <path d="M3 8l3.5 3.5 6.5-7" />
-                                </svg>
-                              ) : null}
-                            </button>
-                          );
-                        })}
-                      </div>
+              {group.colorEntries.map(([colorKey]) => {
+                const palette = paletteFor(colorKey);
+                const selectedColor = normalizeColor(options[colorKey]);
+
+                return (
+                  <div key={colorKey} className="mt-3">
+                    <div className="flex flex-wrap gap-3 items-center py-1.5 px-1">
+                      {palette.map((color) => {
+                        const norm = normalizeColor(color);
+                        const isSelected = selectedColor === norm;
+                        const light = isLightColor(color);
+
+                        return (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => handleSelectColor(colorKey, color)}
+                            style={{ backgroundColor: color, forcedColorAdjust: "none" }}
+                            className={cn(
+                              "size-8 sm:size-9 rounded-full border-2 border-border-strong/90 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-brand flex items-center justify-center cursor-pointer hover:scale-110",
+                              isSelected &&
+                                "ring-2 ring-brand ring-offset-2 ring-offset-background scale-110 border-white",
+                            )}
+                            title={color}
+                            aria-label={`Select colour ${color}`}
+                          >
+                            {isSelected ? (
+                              <svg
+                                className={cn("size-4", light ? "text-neutral-900" : "text-white")}
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M3 8l3.5 3.5 6.5-7" />
+                              </svg>
+                            ) : null}
+                          </button>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       {/* Footer: Back left, Continue right */}
-      <div className="flex items-center justify-between pt-6 mt-6">
+      <div className="flex items-center justify-between pt-6 mt-6 border-t border-border/60">
         {onBack ? (
           <Button
             type="button"
             variant="ghost"
             size="default"
             onClick={onBack}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <ArrowLeft className="size-4 mr-2" /> Back
           </Button>
@@ -383,8 +400,16 @@ export function AvatarBuilder({
           <div />
         )}
 
-        <Button type="button" variant="hero" size="xl" onClick={handleContinue}>
-          {continueLabel} <ArrowRight className="size-4 ml-2" />
+        <Button
+          type="button"
+          variant="hero"
+          size="xl"
+          disabled={continueDisabled}
+          onClick={handleContinue}
+          className="cursor-pointer"
+        >
+          {continueLabel}
+          {showContinueArrow ? <ArrowRight className="size-4 ml-2" /> : null}
         </Button>
       </div>
     </div>
@@ -439,7 +464,7 @@ const VariantChipsRow = React.memo(function VariantChipsRow({
   }, [isOptional, probKey, currentOptions, selectedVal]);
 
   return (
-    <div className="flex items-center gap-2.5 overflow-x-auto pb-2.5 pt-1">
+    <div className="flex items-center gap-3 overflow-x-auto pb-3 pt-1.5 px-1.5">
       {/* None chip */}
       {isOptional ? (
         <button
@@ -453,7 +478,7 @@ const VariantChipsRow = React.memo(function VariantChipsRow({
           )}
           aria-pressed={isNoneSelected}
         >
-          <div className="size-14 sm:size-16 rounded-lg overflow-hidden bg-neutral-950 border border-border/70 flex flex-col items-center justify-center text-muted-foreground group-hover:text-foreground">
+          <div className="size-16 sm:size-18 rounded-lg overflow-hidden bg-neutral-950 border border-border/70 flex flex-col items-center justify-center text-muted-foreground group-hover:text-foreground">
             <svg
               className="size-6 opacity-60"
               viewBox="0 0 24 24"
@@ -467,7 +492,7 @@ const VariantChipsRow = React.memo(function VariantChipsRow({
           </div>
           <span
             className={cn(
-              "mt-1 text-[10px] tracking-tight font-medium",
+              "mt-1 text-[11px] tracking-tight font-medium",
               isNoneSelected ? "text-brand" : "text-muted-foreground",
             )}
           >
@@ -551,7 +576,7 @@ const VariantChip = React.memo(function VariantChip({
       )}
       aria-pressed={isSelected}
     >
-      <div className="size-14 sm:size-16 rounded-lg overflow-hidden bg-neutral-950 border border-border/70 flex items-center justify-center p-0.5">
+      <div className="size-16 sm:size-18 rounded-lg overflow-hidden bg-neutral-950 border border-border/70 flex items-center justify-center p-0.5">
         <img
           src={chipPreviewUri}
           alt={valueLabel(val)}
@@ -562,7 +587,7 @@ const VariantChip = React.memo(function VariantChip({
       </div>
       <span
         className={cn(
-          "mt-1 text-[10px] tracking-tight font-medium truncate max-w-[64px]",
+          "mt-1 text-[11px] tracking-tight font-medium truncate max-w-[76px] px-0.5",
           isSelected ? "text-brand" : "text-muted-foreground",
         )}
       >

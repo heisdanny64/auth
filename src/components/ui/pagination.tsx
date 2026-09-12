@@ -1,9 +1,9 @@
 import * as React from "react";
 import {
-  NavArrowLeft as ChevronLeft,
-  NavArrowRight as ChevronRight,
-  MoreHoriz as MoreHorizontal,
-} from "iconoir-react";
+  ArrowLeft01Icon as ChevronLeft,
+  ArrowRight01Icon as ChevronRight,
+  MoreHorizontalIcon as MoreHorizontal,
+} from "hugeicons-react";
 
 import { cn } from "@/lib/utils";
 import { ButtonProps, buttonVariants } from "@/components/ui/button";

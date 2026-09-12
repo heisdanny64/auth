@@ -82,6 +82,17 @@ export async function completeProfile(profile: {
   if (error) throw error;
 }
 
+export async function updateAvatarConfig(
+  userId: string,
+  avatarConfig: Record<string, unknown> | null,
+) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_config: avatarConfig as unknown as Json })
+    .eq("id", userId);
+  if (error) throw error;
+}
+
 export async function destinationForUser(userId: string) {
   try {
     const profile = await getProfile(userId);

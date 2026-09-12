@@ -1,6 +1,6 @@
 import * as React from "react";
 import { OTPInput, OTPInputContext } from "input-otp";
-import { Minus } from "iconoir-react";
+import { MinusSignIcon as Minus } from "hugeicons-react";
 
 import { cn } from "@/lib/utils";
 

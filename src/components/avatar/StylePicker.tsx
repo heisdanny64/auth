@@ -1,7 +1,7 @@
 import * as React from "react";
 import { AVATAR_STYLES, getStylePreview } from "@/lib/dicebear";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "iconoir-react";
+import { ArrowLeft01Icon as ArrowLeft } from "hugeicons-react";
 import { cn } from "@/lib/utils";
 
 export interface StylePickerProps {
@@ -11,6 +11,7 @@ export interface StylePickerProps {
   onBack?: () => void;
   onSkip?: () => void;
   showSkip?: boolean;
+  stepLabel?: string;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export function StylePicker({
   onBack,
   onSkip,
   showSkip = true,
+  stepLabel = "Step 2 · Avatar",
   className,
 }: StylePickerProps) {
   return (
@@ -28,9 +30,7 @@ export function StylePicker({
       {/* Top Header */}
       <div className="flex items-start justify-between gap-4 pb-6">
         <div>
-          <p className="text-xs font-semibold tracking-wider text-brand uppercase">
-            Step 2 · Avatar
-          </p>
+          <p className="text-xs font-semibold tracking-wider text-brand uppercase">{stepLabel}</p>
           <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-display">
             Find your shape.
           </h2>
@@ -50,7 +50,7 @@ export function StylePicker({
       </div>
 
       {/* Styles Grid */}
-      <div className="py-6">
+      <div className="py-6 px-1">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
           {AVATAR_STYLES.map((style) => {
             const isSelected = selectedStyle === style.key;

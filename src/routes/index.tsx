@@ -10,13 +10,13 @@ import { destinationForUser } from "@/lib/profiles";
 import { useSession } from "@/hooks/useSession";
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search) => ({
-    returnTo: typeof search.returnTo === "string" ? search.returnTo : undefined,
-    next: typeof search.next === "string" ? search.next : undefined,
-    client_id: typeof search.client_id === "string" ? search.client_id : undefined,
-    redirect_uri: typeof search.redirect_uri === "string" ? search.redirect_uri : undefined,
-    state: typeof search.state === "string" ? search.state : undefined,
-    prompt: search.prompt === "none" || search.prompt === "login" ? search.prompt : undefined,
+  validateSearch: (search: Record<string, unknown> = {}) => ({
+    returnTo: typeof search?.returnTo === "string" ? search.returnTo : undefined,
+    next: typeof search?.next === "string" ? search.next : undefined,
+    client_id: typeof search?.client_id === "string" ? search.client_id : undefined,
+    redirect_uri: typeof search?.redirect_uri === "string" ? search.redirect_uri : undefined,
+    state: typeof search?.state === "string" ? search.state : undefined,
+    prompt: search?.prompt === "none" || search?.prompt === "login" ? search.prompt : undefined,
   }),
   head: () => ({
     meta: [
@@ -40,20 +40,21 @@ export const Route = createFileRoute("/")({
 function SignIn() {
   const [pending, setPending] = useState(false);
   const navigate = useNavigate();
-  const search = Route.useSearch();
+  const rawSearch = Route.useSearch();
+  const search = rawSearch ?? {};
   const { session } = useSession();
 
   const customReturnTo =
-    search.returnTo ||
-    search.next ||
-    (search.client_id && search.redirect_uri
+    search?.returnTo ||
+    search?.next ||
+    (search?.client_id && search?.redirect_uri
       ? `/authorize?client_id=${encodeURIComponent(search.client_id)}&redirect_uri=${encodeURIComponent(search.redirect_uri)}${search.state ? `&state=${encodeURIComponent(search.state)}` : ""}&auth_completed=1`
       : undefined);
 
   useEffect(() => {
     if (!session) return;
 
-    if (search.client_id && search.redirect_uri) {
+    if (search?.client_id && search?.redirect_uri) {
       navigate({
         to: "/authorize",
         search: {
@@ -83,10 +84,10 @@ function SignIn() {
   }, [
     session,
     navigate,
-    search.client_id,
-    search.redirect_uri,
-    search.state,
-    search.prompt,
+    search?.client_id,
+    search?.redirect_uri,
+    search?.state,
+    search?.prompt,
     customReturnTo,
   ]);
 
@@ -96,7 +97,7 @@ function SignIn() {
     setPending(true);
     try {
       await signInWithEmail(String(form.get("email") ?? ""), String(form.get("password") ?? ""));
-      if (search.client_id && search.redirect_uri) {
+      if (search?.client_id && search?.redirect_uri) {
         navigate({
           to: "/authorize",
           search: {

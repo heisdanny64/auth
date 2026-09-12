@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { NavArrowDown as ChevronDown } from "iconoir-react";
+import { ArrowDown01Icon as ChevronDown } from "hugeicons-react";
 
 import { cn } from "@/lib/utils";
 

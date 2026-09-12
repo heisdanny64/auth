@@ -1,6 +1,10 @@
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import { Check, NavArrowRight as ChevronRight, SystemRestart as Loader2 } from "iconoir-react";
+import {
+  Tick02Icon as Check,
+  ArrowRight01Icon as ChevronRight,
+  Loading03Icon as Loader2,
+} from "hugeicons-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +19,9 @@ import type { AvatarOptions } from "@/lib/dicebear";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   ssr: false,
-  validateSearch: (search) => ({ next: typeof search.next === "string" ? search.next : undefined }),
+  validateSearch: (search: Record<string, unknown> = {}) => ({
+    next: typeof search?.next === "string" ? search.next : undefined,
+  }),
   beforeLoad: async ({ location }) => {
     const { supabase } = await import("@/integrations/supabase/client");
     const { data } = await supabase.auth.getUser();
@@ -128,7 +134,7 @@ function Onboarding() {
 
   return (
     <main className="min-h-screen bg-background bg-halo px-4 py-6 sm:px-6 sm:py-10">
-      <div className="mx-auto w-full max-w-5xl">
+      <div className="mx-auto w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl">
         <header className="mb-6 flex items-center justify-between px-1">
           <div className="flex items-center gap-2.5">
             <img src="/spun-logo.svg" alt="Spün mark" className="size-9" />

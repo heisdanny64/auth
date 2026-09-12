@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { WarningTriangle as AlertTriangle, SystemRestart as Loader2 } from "iconoir-react";
+import { Alert02Icon as AlertTriangle, Loading03Icon as Loader2 } from "hugeicons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AuthShell, SpunMark } from "@/components/auth/AuthShell";
@@ -12,65 +12,56 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/authorize")({
   ssr: false,
-  validateSearch: (search) => ({
-    client_id: typeof search.client_id === "string" ? search.client_id : undefined,
-    redirect_uri: typeof search.redirect_uri === "string" ? search.redirect_uri : undefined,
-    state: typeof search.state === "string" ? search.state : undefined,
-    prompt: search.prompt === "none" || search.prompt === "login" ? search.prompt : undefined,
+  validateSearch: (search: Record<string, unknown> = {}) => ({
+    client_id: typeof search?.client_id === "string" ? search.client_id : undefined,
+    redirect_uri: typeof search?.redirect_uri === "string" ? search.redirect_uri : undefined,
+    state: typeof search?.state === "string" ? search.state : undefined,
+    prompt: search?.prompt === "none" || search?.prompt === "login" ? search.prompt : undefined,
     auth_completed:
-      search.auth_completed === "1" ||
-      search.auth_completed === 1 ||
-      search.auth_completed === "true" ||
-      search.auth_completed === true
+      search?.auth_completed === "1" ||
+      search?.auth_completed === 1 ||
+      search?.auth_completed === "true" ||
+      search?.auth_completed === true
         ? "1"
         : undefined,
   }),
-  loader: async ({ search }) => {
-    if (!search.client_id || !search.redirect_uri) {
+  loaderDeps: ({ search }) => search,
+  loader: async ({ deps, location }) => {
+    const s = deps?.client_id ? deps : (location?.search ?? {});
+    if (!s.client_id || !s.redirect_uri) {
       return { client: null, error: true, user: null, profile: null };
     }
 
     try {
-      new URL(search.redirect_uri);
+      new URL(s.redirect_uri);
     } catch {
       return { client: null, error: true, user: null, profile: null };
     }
 
     let client: AuthorizeClient | null = null;
     try {
-      const { data: rawClient, error: clientQueryError } = await supabase
-        .from("oauth_clients")
-        .select("name, logo_url, allowed_redirect_uris")
-        .eq("client_id", search.client_id)
-        .maybeSingle();
-
-      if (!clientQueryError && rawClient) {
-        const uris = Array.isArray(rawClient.allowed_redirect_uris)
-          ? rawClient.allowed_redirect_uris
-          : [];
-        if (uris.includes(search.redirect_uri)) {
-          client = { name: rawClient.name, logoUrl: rawClient.logo_url };
-        }
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:3000";
+      const res = await fetch(
+        `${origin}/api/authorize-client?clientId=${encodeURIComponent(s.client_id)}&redirectUri=${encodeURIComponent(s.redirect_uri)}`,
+      );
+      if (res.ok) {
+        client = (await res.json()) as AuthorizeClient;
       }
-
-      if (!client) {
-        const res = await fetch(
-          `/api/authorize-client?clientId=${encodeURIComponent(search.client_id)}&redirectUri=${encodeURIComponent(search.redirect_uri)}`,
-        );
-        if (res.ok) {
-          client = (await res.json()) as AuthorizeClient;
-        }
-      }
-    } catch {
-      // Ignored
+    } catch (err) {
+      console.warn("Could not retrieve client in authorize loader:", err);
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    let user = null;
     let profile: ProfileRecord | null = null;
-    if (user?.id) {
-      profile = await getProfile(user.id);
+    try {
+      const { data } = await supabase.auth.getUser();
+      user = data?.user ?? null;
+      if (user?.id) {
+        profile = await getProfile(user.id);
+      }
+    } catch (err) {
+      console.warn("Could not retrieve user in authorize loader:", err);
     }
 
     return {
@@ -96,12 +87,12 @@ export const Route = createFileRoute("/authorize")({
 type View = "checking" | "error" | "ready";
 type AuthorizeClient = { name: string; logoUrl: string | null };
 
-function authorizePath(search: ReturnType<typeof Route.useSearch>, completed = true) {
+function authorizePath(search?: ReturnType<typeof Route.useSearch>, completed = true) {
   const params = new URLSearchParams();
-  if (search.client_id) params.set("client_id", search.client_id);
-  if (search.redirect_uri) params.set("redirect_uri", search.redirect_uri);
-  if (search.state) params.set("state", search.state);
-  if (search.prompt && (!completed || search.prompt !== "login")) {
+  if (search?.client_id) params.set("client_id", search.client_id);
+  if (search?.redirect_uri) params.set("redirect_uri", search.redirect_uri);
+  if (search?.state) params.set("state", search.state);
+  if (search?.prompt && (!completed || search.prompt !== "login")) {
     params.set("prompt", search.prompt);
   }
   if (completed) params.set("auth_completed", "1");
@@ -110,7 +101,8 @@ function authorizePath(search: ReturnType<typeof Route.useSearch>, completed = t
 
 function Authorize() {
   const loaderData = Route.useLoaderData();
-  const search = Route.useSearch();
+  const rawSearch = Route.useSearch();
+  const search = rawSearch ?? {};
   const navigate = useNavigate();
   const { user: sessionUser, loading: sessionLoading } = useSession();
 
@@ -118,24 +110,33 @@ function Authorize() {
   const isSessionLoading = sessionLoading && !loaderData?.user;
 
   const [client, setClient] = useState<AuthorizeClient | null>(() => loaderData?.client ?? null);
-  const [view, setView] = useState<View>(() =>
-    loaderData?.error ? "error" : loaderData?.client ? "ready" : "checking",
-  );
+  const [view, setView] = useState<View>(() => {
+    if (loaderData?.client) return "ready";
+    return "checking";
+  });
   const [profile, setProfile] = useState<ProfileRecord | null>(() => loaderData?.profile ?? null);
   const [pending, setPending] = useState(false);
+
+  // Sync state if loaderData updates
+  useEffect(() => {
+    if (loaderData?.client) {
+      setClient(loaderData.client);
+      setView("ready");
+    }
+  }, [loaderData?.client]);
 
   const autoIssuedRef = useRef(false);
   const destination = authorizePath(search, true);
 
-  // 1. Initial validation on load if not already supplied by loader
+  // Client validation effect if not already verified by loader
   useEffect(() => {
     let cancelled = false;
 
-    if (loaderData?.client) {
+    if (client) {
       return;
     }
 
-    if (!search.client_id || !search.redirect_uri) {
+    if (!search?.client_id || !search?.redirect_uri) {
       setView("error");
       return;
     }
@@ -152,31 +153,10 @@ function Authorize() {
       const redirectUri = search.redirect_uri!;
 
       try {
-        // First try direct client query on oauth_clients (if RLS allows anon read)
-        const { data: rawClient, error: clientQueryError } = await supabase
-          .from("oauth_clients")
-          .select("name, logo_url, allowed_redirect_uris")
-          .eq("client_id", clientId)
-          .maybeSingle();
-
-        if (!clientQueryError && rawClient) {
-          const uris = Array.isArray(rawClient.allowed_redirect_uris)
-            ? rawClient.allowed_redirect_uris
-            : [];
-          if (!uris.includes(redirectUri)) {
-            if (!cancelled) setView("error");
-            return;
-          }
-          if (!cancelled) {
-            setClient({ name: rawClient.name, logoUrl: rawClient.logo_url });
-            setView("ready");
-          }
-          return;
-        }
-
-        // Server API endpoint with service role access
+        const origin =
+          typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:3000";
         const res = await fetch(
-          `/api/authorize-client?clientId=${encodeURIComponent(clientId)}&redirectUri=${encodeURIComponent(redirectUri)}`,
+          `${origin}/api/authorize-client?clientId=${encodeURIComponent(clientId)}&redirectUri=${encodeURIComponent(redirectUri)}`,
         );
 
         if (cancelled) return;
@@ -185,7 +165,7 @@ function Authorize() {
           return;
         }
 
-        const data = (await res.json()) as { name: string; logoUrl: string | null };
+        const data = (await res.json()) as AuthorizeClient;
         setClient(data);
         setView("ready");
       } catch {
@@ -198,7 +178,7 @@ function Authorize() {
     return () => {
       cancelled = true;
     };
-  }, [loaderData?.client, search.client_id, search.redirect_uri]);
+  }, [client, search?.client_id, search?.redirect_uri]);
 
   // 2. Fetch profile when user session is available
   const userId = user?.id;
@@ -236,7 +216,7 @@ function Authorize() {
   // Helper to create auth_code and perform final redirect
   const executeAuthorize = useCallback(
     async (targetProfile: ProfileRecord) => {
-      if (!search.client_id || !search.redirect_uri) return;
+      if (!search?.client_id || !search?.redirect_uri) return;
       setPending(true);
 
       const code = crypto.randomUUID();
@@ -284,7 +264,7 @@ function Authorize() {
         setPending(false);
       }
     },
-    [search.client_id, search.redirect_uri, search.state],
+    [search?.client_id, search?.redirect_uri, search?.state],
   );
 
   // 3. Handle unauthenticated redirect & prompt behavior
@@ -292,11 +272,12 @@ function Authorize() {
     if (view !== "ready" || !client || isSessionLoading) return;
 
     // prompt=none handling
-    if (search.prompt === "none") {
+    if (search?.prompt === "none") {
       if (!user) {
-        const target = new URL(search.redirect_uri!);
+        if (!search?.redirect_uri) return;
+        const target = new URL(search.redirect_uri);
         target.searchParams.set("error", "login_required");
-        if (search.state) target.searchParams.set("state", search.state);
+        if (search?.state) target.searchParams.set("state", search.state);
         window.location.replace(target.toString());
         return;
       }
@@ -312,10 +293,10 @@ function Authorize() {
       navigate({
         to: "/",
         search: {
-          client_id: search.client_id,
-          redirect_uri: search.redirect_uri,
-          state: search.state,
-          prompt: search.prompt,
+          client_id: search?.client_id,
+          redirect_uri: search?.redirect_uri,
+          state: search?.state,
+          prompt: search?.prompt,
         },
         replace: true,
       });
@@ -323,14 +304,14 @@ function Authorize() {
     }
 
     // prompt=login without completed sign in: redirect to the Auth form (/)
-    if (search.prompt === "login" && search.auth_completed !== "1") {
+    if (search?.prompt === "login" && search?.auth_completed !== "1") {
       navigate({
         to: "/",
         search: {
-          client_id: search.client_id,
-          redirect_uri: search.redirect_uri,
-          state: search.state,
-          prompt: search.prompt,
+          client_id: search?.client_id,
+          redirect_uri: search?.redirect_uri,
+          state: search?.state,
+          prompt: search?.prompt,
         },
         replace: true,
       });
@@ -341,11 +322,11 @@ function Authorize() {
     executeAuthorize,
     navigate,
     profile,
-    search.auth_completed,
-    search.client_id,
-    search.prompt,
-    search.redirect_uri,
-    search.state,
+    search?.auth_completed,
+    search?.client_id,
+    search?.prompt,
+    search?.redirect_uri,
+    search?.state,
     isSessionLoading,
     user,
     view,
@@ -363,9 +344,9 @@ function Authorize() {
       navigate({
         to: "/",
         search: {
-          client_id: search.client_id,
-          redirect_uri: search.redirect_uri,
-          state: search.state,
+          client_id: search?.client_id,
+          redirect_uri: search?.redirect_uri,
+          state: search?.state,
           prompt: "login",
         },
         replace: true,
@@ -412,8 +393,8 @@ function Authorize() {
     >
       <div className="space-y-6">
         {/* Active session identifier */}
-        <div className="flex items-center gap-3.5 rounded-2xl border-2 border-border bg-surface/70 p-3.5">
-          <div className="size-12 overflow-hidden rounded-full border-2 border-border bg-surface shrink-0">
+        <div className="flex items-center gap-3.5 rounded-2xl border border-border bg-surface/70 p-3.5">
+          <div className="size-12 overflow-hidden rounded-full border border-border bg-surface shrink-0">
             {avatarSrc ? (
               <img
                 src={avatarSrc}

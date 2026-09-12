@@ -1,5 +1,5 @@
 import { useId, useState, type InputHTMLAttributes, type ReactNode } from "react";
-import { Eye, EyeClosed as EyeOff } from "iconoir-react";
+import { ViewIcon, ViewOffIcon } from "hugeicons-react";
 import { cn } from "@/lib/utils";
 
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -42,9 +42,9 @@ export function Field({ label, hint, className, type = "text", ...props }: Field
             type="button"
             onClick={() => setRevealed((v) => !v)}
             aria-label={revealed ? "Hide password" : "Show password"}
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
           >
-            {revealed ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+            {revealed ? <ViewOffIcon className="size-4" /> : <ViewIcon className="size-4" />}
           </button>
         ) : null}
       </div>

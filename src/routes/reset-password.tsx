@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Field } from "@/components/auth/Field";
 import { Button } from "@/components/ui/button";
-import { Check } from "iconoir-react";
+import { Tick02Icon as Check } from "hugeicons-react";
 import { toast } from "sonner";
 import { updatePassword } from "@/lib/auth";
 
