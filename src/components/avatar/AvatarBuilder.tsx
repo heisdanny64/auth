@@ -79,8 +79,13 @@ function buildCleanInitialOptions(
   for (const key of Object.keys(descriptor)) {
     if (key.endsWith("Probability")) {
       const featureName = key.replace(/Probability$/, "").toLowerCase();
+      const variantKey = `${key.replace(/Probability$/, "")}Variant`;
       if (OPTIONAL_FEATURES.has(featureName) && opts[key] === undefined) {
-        opts[key] = 0;
+        if (opts[variantKey] !== undefined) {
+          opts[key] = 100;
+        } else {
+          opts[key] = 0;
+        }
       }
     }
   }

@@ -134,6 +134,7 @@ export function titleize(key: string) {
   const lower = key.toLowerCase();
   if (lower === "rearhair") return "Rear Hair";
   if (lower === "facialhair") return "Facial Hair";
+  if (lower === "gesture" || lower === "gestures") return "Gestures";
   return key
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .split(/[-_ ]+/)
@@ -471,6 +472,8 @@ export const OPTIONAL_FEATURES = new Set([
   "piercing",
   "tattoo",
   "mask",
+  "gesture",
+  "gestures",
 ]);
 
 export const CORE_FEATURES = new Set([
@@ -527,6 +530,8 @@ export const FEATURE_ORDER = [
   "body",
   "clothing",
   "shirt",
+  "gesture",
+  "gestures",
   "background",
 ];
 

@@ -16,6 +16,7 @@ import { completeProfile, destinationForUser, slugifyHandle } from "@/lib/profil
 import { StylePicker } from "@/components/avatar/StylePicker";
 import { AvatarBuilder } from "@/components/avatar/AvatarBuilder";
 import type { AvatarOptions } from "@/lib/dicebear";
+import { safeNavigate } from "@/lib/navigation";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   ssr: false,
@@ -121,11 +122,7 @@ function Onboarding() {
       });
 
       const next = search.next ?? "/me";
-      if (next.includes("?")) {
-        window.location.replace(next);
-      } else {
-        navigate({ to: next, replace: true });
-      }
+      safeNavigate(navigate, next, { replace: true });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Could not save your profile");
       setPending(false);

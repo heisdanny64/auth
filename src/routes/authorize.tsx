@@ -25,9 +25,8 @@ export const Route = createFileRoute("/authorize")({
         ? "1"
         : undefined,
   }),
-  loaderDeps: ({ search }) => search,
-  loader: async ({ deps, location }) => {
-    const s = deps?.client_id ? deps : (location?.search ?? {});
+  loader: async ({ location }) => {
+    const s = location?.search ?? {};
     if (!s.client_id || !s.redirect_uri) {
       return { client: null, error: true, user: null, profile: null };
     }
@@ -111,19 +110,24 @@ function Authorize() {
 
   const [client, setClient] = useState<AuthorizeClient | null>(() => loaderData?.client ?? null);
   const [view, setView] = useState<View>(() => {
+    if (loaderData?.error) return "error";
     if (loaderData?.client) return "ready";
     return "checking";
   });
   const [profile, setProfile] = useState<ProfileRecord | null>(() => loaderData?.profile ?? null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   // Sync state if loaderData updates
   useEffect(() => {
-    if (loaderData?.client) {
+    if (loaderData?.error) {
+      setView("error");
+    } else if (loaderData?.client) {
       setClient(loaderData.client);
       setView("ready");
     }
-  }, [loaderData?.client]);
+  }, [loaderData?.client, loaderData?.error]);
 
   const autoIssuedRef = useRef(false);
   const destination = authorizePath(search, true);
@@ -186,6 +190,7 @@ function Authorize() {
     if (isSessionLoading || !userId) {
       if (!userId && !isSessionLoading) {
         setProfile(null);
+        setProfileLoading(false);
       }
       return;
     }
@@ -195,17 +200,23 @@ function Authorize() {
     }
 
     let cancelled = false;
+    setProfileLoading(true);
+    setProfileError(null);
     void getProfile(userId)
       .then((p) => {
         if (cancelled) return;
+        setProfileLoading(false);
         if (!p?.handle) {
           navigate({ to: "/onboarding", search: { next: destination }, replace: true });
           return;
         }
         setProfile(p);
       })
-      .catch(() => {
-        if (!cancelled) setProfile(null);
+      .catch((caught) => {
+        if (!cancelled) {
+          setProfileLoading(false);
+          setProfileError(caught instanceof Error ? caught.message : "Failed to load profile");
+        }
       });
 
     return () => {
@@ -357,11 +368,62 @@ function Authorize() {
     }
   }
 
+  function handleCancel() {
+    if (!search?.redirect_uri) {
+      navigate({ to: "/" });
+      return;
+    }
+    try {
+      const target = new URL(search.redirect_uri);
+      target.searchParams.set("error", "access_denied");
+      if (search?.state) target.searchParams.set("state", search.state);
+      window.location.assign(target.toString());
+    } catch {
+      navigate({ to: "/" });
+    }
+  }
+
   if (view === "error") {
     return <HardErrorScreen />;
   }
 
-  if (view === "checking" || !client || isSessionLoading || !user || !profile?.handle) {
+  if (profileError) {
+    return (
+      <AuthShell
+        eyebrow="Profile Error"
+        title="Could not load your Spün profile"
+        subtitle={profileError}
+      >
+        <div className="space-y-4">
+          <Button
+            type="button"
+            variant="hero"
+            className="w-full"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => navigate({ to: "/" })}
+          >
+            Back to Sign in
+          </Button>
+        </div>
+      </AuthShell>
+    );
+  }
+
+  if (
+    view === "checking" ||
+    !client ||
+    isSessionLoading ||
+    profileLoading ||
+    !user ||
+    !profile?.handle
+  ) {
     return (
       <main className="relative min-h-screen bg-background bg-halo">
         <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 py-8 sm:py-14">
@@ -414,19 +476,33 @@ function Authorize() {
           </div>
         </div>
 
-        {/* Continue button: same default button on the sign-in form card */}
-        <Button
-          id="continue-button"
-          type="button"
-          variant="hero"
-          size="xl"
-          className="w-full"
-          onClick={handleContinue}
-          disabled={pending}
-        >
-          {pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-          {pending ? "Continuing…" : "Continue"}
-        </Button>
+        {/* Action buttons */}
+        <div className="flex flex-col gap-3">
+          <Button
+            id="continue-button"
+            type="button"
+            variant="hero"
+            size="xl"
+            className="w-full"
+            onClick={handleContinue}
+            disabled={pending}
+          >
+            {pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
+            {pending ? "Continuing…" : `Continue as @${profile.handle}`}
+          </Button>
+
+          <Button
+            id="cancel-button"
+            type="button"
+            variant="outline"
+            size="xl"
+            className="w-full"
+            onClick={handleCancel}
+            disabled={pending}
+          >
+            Cancel
+          </Button>
+        </div>
 
         {/* Not you? Sign in here link with amber accent */}
         <p className="text-center text-sm text-muted-foreground">

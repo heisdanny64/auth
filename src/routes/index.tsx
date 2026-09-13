@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { signInWithEmail } from "@/lib/auth";
 import { destinationForUser } from "@/lib/profiles";
 import { useSession } from "@/hooks/useSession";
+import { safeNavigate } from "@/lib/navigation";
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown> = {}) => ({
@@ -70,11 +71,7 @@ function SignIn() {
     }
 
     if (customReturnTo) {
-      if (customReturnTo.includes("?")) {
-        window.location.replace(customReturnTo);
-      } else {
-        navigate({ to: customReturnTo, replace: true });
-      }
+      safeNavigate(navigate, customReturnTo, { replace: true });
       return;
     }
 
@@ -109,6 +106,10 @@ function SignIn() {
           },
           replace: true,
         });
+        return;
+      }
+      if (customReturnTo) {
+        safeNavigate(navigate, customReturnTo, { replace: true });
         return;
       }
     } catch (error) {

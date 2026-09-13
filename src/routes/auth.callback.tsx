@@ -8,6 +8,7 @@ import {
 import { AuthShell } from "@/components/auth/AuthShell";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { safeNavigate } from "@/lib/navigation";
 
 export const Route = createFileRoute("/auth/callback")({
   ssr: false,
@@ -82,11 +83,7 @@ function AuthCallback() {
             setMessage("You're signed in.");
             setTimeout(() => {
               const next = params.get("next") ?? "/onboarding";
-              if (next.includes("?")) {
-                window.location.replace(next);
-              } else {
-                navigate({ to: next, replace: true });
-              }
+              safeNavigate(navigate, next, { replace: true });
             }, 900);
           }
           return;

@@ -6,6 +6,7 @@ import { SocialRow } from "@/components/auth/SocialRow";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { signUpWithEmail } from "@/lib/auth";
+import { safeNavigate } from "@/lib/navigation";
 
 export const Route = createFileRoute("/signup")({
   validateSearch: (search: Record<string, unknown> = {}) => ({
@@ -68,10 +69,8 @@ function SignUp() {
             },
             replace: true,
           });
-        } else if (returnTo.includes("?")) {
-          window.location.replace(returnTo);
         } else {
-          navigate({ to: returnTo, replace: true });
+          safeNavigate(navigate, returnTo, { replace: true });
         }
       } else {
         setSent(true);
