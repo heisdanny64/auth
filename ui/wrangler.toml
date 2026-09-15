@@ -1,0 +1,12 @@
+name = "spun-auth-ui"
+main = "dist/server/index.mjs"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the
+# Cloudflare Workers dashboard under Settings > Variables & Secrets.
+
+[[routes]]
+pattern = "sso.byspun.xyz/*"
+zone_name = "byspun.xyz"

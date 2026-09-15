@@ -1,4 +1,0 @@
-- [x] Add `/authorize` consent screen with client validation, session states, prompt behavior, and safe redirects.
-- [x] Add single-use `auth_codes` persistence and server-side authorization code issuance.
-- [x] Preserve authorization context through email/social sign-in and sign-up flows.
-- [x] Verify the route, auth form states, and invalid-client dead end in the live preview.
