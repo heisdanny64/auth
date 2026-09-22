@@ -1,44 +1,80 @@
-// Server-side DiceBear SVG generation for GET /api/avatar/:user_id.
-// Dynamically imports styles to keep the Worker bundle lean — only the
-// requested style is loaded per request.
+import { Avatar, Style } from "@dicebear/core";
+import adventurer from "@dicebear/styles/adventurer.json";
+import avataaars from "@dicebear/styles/avataaars.json";
+import bigEars from "@dicebear/styles/big-ears.json";
+import bigSmile from "@dicebear/styles/big-smile.json";
+import bottts from "@dicebear/styles/bottts.json";
+import croodles from "@dicebear/styles/croodles.json";
+import dylan from "@dicebear/styles/dylan.json";
+import initialFace from "@dicebear/styles/initial-face.json";
+import initials from "@dicebear/styles/initials.json";
+import lorelei from "@dicebear/styles/lorelei.json";
+import micah from "@dicebear/styles/micah.json";
+import miniavs from "@dicebear/styles/miniavs.json";
+import notionists from "@dicebear/styles/notionists.json";
+import openPeeps from "@dicebear/styles/open-peeps.json";
+import personas from "@dicebear/styles/personas.json";
+import pixelArt from "@dicebear/styles/pixel-art.json";
+import toonHead from "@dicebear/styles/toon-head.json";
 
-type AvatarConfig = {
-  style: string;
-  seed?: string;
-  options?: Record<string, unknown>;
+type StyleDefinition = Record<string, unknown>;
+
+const definitions: Record<string, StyleDefinition> = {
+  adventurer: adventurer as StyleDefinition,
+  avataaars: avataaars as StyleDefinition,
+  "big-ears": bigEars as StyleDefinition,
+  "big-smile": bigSmile as StyleDefinition,
+  bottts: bottts as StyleDefinition,
+  croodles: croodles as StyleDefinition,
+  dylan: dylan as StyleDefinition,
+  "initial-face": initialFace as StyleDefinition,
+  initials: initials as StyleDefinition,
+  lorelei: lorelei as StyleDefinition,
+  micah: micah as StyleDefinition,
+  miniavs: miniavs as StyleDefinition,
+  notionists: notionists as StyleDefinition,
+  "open-peeps": openPeeps as StyleDefinition,
+  personas: personas as StyleDefinition,
+  "pixel-art": pixelArt as StyleDefinition,
+  "toon-head": toonHead as StyleDefinition,
 };
 
-const STYLE_MODULES: Record<string, () => Promise<{ default: unknown }>> = {
-  adventurer: () => import("@dicebear/styles/adventurer.json"),
-  avataaars: () => import("@dicebear/styles/avataaars.json"),
-  "big-ears": () => import("@dicebear/styles/big-ears.json"),
-  "big-smile": () => import("@dicebear/styles/big-smile.json"),
-  bottts: () => import("@dicebear/styles/bottts.json"),
-  croodles: () => import("@dicebear/styles/croodles.json"),
-  dylan: () => import("@dicebear/styles/dylan.json"),
-  "initial-face": () => import("@dicebear/styles/initial-face.json"),
-  initials: () => import("@dicebear/styles/initials.json"),
-  lorelei: () => import("@dicebear/styles/lorelei.json"),
-  micah: () => import("@dicebear/styles/micah.json"),
-  miniavs: () => import("@dicebear/styles/miniavs.json"),
-  notionists: () => import("@dicebear/styles/notionists.json"),
-  "open-peeps": () => import("@dicebear/styles/open-peeps.json"),
-  personas: () => import("@dicebear/styles/personas.json"),
-  "pixel-art": () => import("@dicebear/styles/pixel-art.json"),
-  "toon-head": () => import("@dicebear/styles/toon-head.json"),
-};
+const styleCache = new Map<string, Style<StyleDefinition>>();
 
-export async function generateAvatarSvg(config: AvatarConfig | null, seed: string): Promise<string> {
-  const { createAvatar, Style } = await import("@dicebear/core");
+function getStyle(key: string): Style<StyleDefinition> {
+  const cached = styleCache.get(key);
+  if (cached) return cached;
+  const definition = definitions[key] ?? definitions["initials"];
+  const style = new Style(definition);
+  styleCache.set(key, style);
+  return style;
+}
 
-  const styleName = config?.style ?? "initials";
-  const loader = STYLE_MODULES[styleName] ?? STYLE_MODULES["initials"];
-  const styleModule = await loader();
+function detectStyle(config: Record<string, unknown>): string {
+  if (typeof config["style"] === "string" && config["style"].trim()) {
+    return config["style"].trim();
+  }
+  return "initials";
+}
 
-  const avatar = createAvatar(styleModule.default as Style<Record<string, unknown>>, {
-    seed: config?.seed ?? seed,
-    ...(config?.options ?? {}),
-  });
+export function generateAvatarSvg(
+  config: Record<string, unknown> | null,
+  seed: string,
+): string {
+  const styleName = config ? detectStyle(config) : "initials";
+  const style = getStyle(styleName);
 
+  // Strip non-avatar keys so DiceBear's strict validator doesn't throw
+  const cleaned: Record<string, unknown> = { seed };
+  if (config) {
+    for (const [key, value] of Object.entries(config)) {
+      if (key === "style" || key === "seed" || value === null || value === undefined || value === "") {
+        continue;
+      }
+      cleaned[key] = value;
+    }
+  }
+
+  const avatar = new Avatar(style, cleaned);
   return avatar.toString();
 }
