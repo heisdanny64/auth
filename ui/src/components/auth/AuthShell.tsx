@@ -75,7 +75,13 @@ export function AuthShell({
         </div>
 
         <footer className="text-center text-xs text-muted-foreground/70">
-          Protected by Spün · Terms & Privacy
+          Protected by Spün ·{" "}
+          <Link
+            to="/legal"
+            className="underline underline-offset-4 transition-colors hover:text-foreground"
+          >
+            Terms & Privacy
+          </Link>
         </footer>
       </div>
     </main>

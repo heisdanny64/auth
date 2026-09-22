@@ -31,7 +31,11 @@ export async function handleAuthorize(request: Request, env: Env): Promise<Respo
     ? client.allowed_redirect_uris
     : [];
 
-  if (!allowedUris.includes(redirectUri)) {
+  const isAllowed = allowedUris.some(
+    (u: string) => u === redirectUri || u.replace(/\/$/, "") === redirectUri.replace(/\/$/, ""),
+  );
+
+  if (!isAllowed) {
     return json({ error: "redirect_uri_not_allowed" }, 403);
   }
 

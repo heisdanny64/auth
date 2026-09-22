@@ -5,7 +5,7 @@ import { InformationCircleIcon as Info } from "hugeicons-react";
 import { StylePicker } from "@/components/avatar/StylePicker";
 import { AvatarBuilder } from "@/components/avatar/AvatarBuilder";
 import { getProfile, updateAvatarConfig } from "@/lib/profiles";
-import { detectAvatarStyle, type AvatarOptions } from "@/lib/dicebear";
+import { detectAvatarStyle, areConfigsEqual, type AvatarOptions } from "@/lib/dicebear";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +83,7 @@ function AvatarPage() {
         seed: profile?.handle || "spun-default",
         options: {} as AvatarOptions,
         config: null,
+        baselineConfig: null,
         isDirty: false,
       };
     }
@@ -103,15 +104,41 @@ function AvatarPage() {
     }
 
     const existingConfig = profile?.avatar_config;
+    let originalProfileConfig: Record<string, unknown> | null = null;
+    let detectedStyle = "adventurer";
+    let seed = profile?.handle || "spun-default";
 
-    // In refine mode, prefer existing profile avatar if draft is absent or from a different style
-    if (mode === "refine" && existingConfig) {
-      const detectedStyle =
+    if (existingConfig) {
+      detectedStyle =
         (existingConfig.style as string) || detectAvatarStyle(existingConfig) || "adventurer";
-      const seed = (existingConfig.seed as string) || profile?.handle || "spun-default";
+      seed = (existingConfig.seed as string) || profile?.handle || "spun-default";
+      originalProfileConfig = {
+        ...existingConfig,
+        style: detectedStyle,
+        seed,
+      };
+    }
 
-      // If there is an active draft matching the current style, allow user to resume it
-      if (draft && draft.style && String(draft.style) === detectedStyle) {
+    // In refine mode or whenever an existing profile config exists:
+    if (originalProfileConfig) {
+      // Check if draft actually differs from the user's saved avatar!
+      if (draft && draft.style) {
+        const hasRealDifference = !areConfigsEqual(draft, originalProfileConfig);
+        if (!hasRealDifference) {
+          // Identical to existing saved avatar: clear outdated draft from storage silently!
+          if (draftStorageKey && typeof window !== "undefined") {
+            try {
+              localStorage.removeItem(draftStorageKey);
+            } catch (e) {
+              console.warn("Failed to clear identical avatar draft:", e);
+            }
+          }
+          draft = null;
+        }
+      }
+
+      // If an actual differing draft exists, allow user to resume it
+      if (draft && draft.style) {
         return {
           hasDraft: true,
           savedDraft: draft,
@@ -120,22 +147,28 @@ function AvatarPage() {
           seed: String(draft.seed || seed),
           options: draft as AvatarOptions,
           config: draft,
+          baselineConfig: originalProfileConfig,
           isDirty: true,
         };
       }
 
-      return {
-        hasDraft: false,
-        savedDraft: null,
-        phase: "builder" as const,
-        style: detectedStyle,
-        seed,
-        options: existingConfig as AvatarOptions,
-        config: { ...existingConfig, style: detectedStyle, seed },
-        isDirty: false,
-      };
+      // If in refine mode with no differing draft, open builder with existing profile avatar
+      if (mode === "refine") {
+        return {
+          hasDraft: false,
+          savedDraft: null,
+          phase: "builder" as const,
+          style: detectedStyle,
+          seed,
+          options: existingConfig as AvatarOptions,
+          config: originalProfileConfig,
+          baselineConfig: originalProfileConfig,
+          isDirty: false,
+        };
+      }
     }
 
+    // If there is an unsaved draft without an existing profile avatar:
     if (draft && draft.style) {
       return {
         hasDraft: true,
@@ -145,11 +178,12 @@ function AvatarPage() {
         seed: String(draft.seed || profile?.handle || "spun-default"),
         options: draft as AvatarOptions,
         config: draft,
+        baselineConfig: null,
         isDirty: true,
       };
     }
 
-    // Fresh start or plus icon
+    // Fresh start or style picker
     return {
       hasDraft: false,
       savedDraft: null,
@@ -158,6 +192,7 @@ function AvatarPage() {
       seed: profile?.handle || "spun-default",
       options: {} as AvatarOptions,
       config: null,
+      baselineConfig: null,
       isDirty: false,
     };
   }, [draftStorageKey, mode, profile]);
@@ -170,6 +205,9 @@ function AvatarPage() {
   const [currentConfig, setCurrentConfig] = useState<Record<string, unknown> | null>(
     () => initialSetup.config,
   );
+
+  // Baseline original configuration to compare against for changes
+  const baselineConfigRef = useRef<Record<string, unknown> | null>(initialSetup.baselineConfig);
 
   // Mount key to force AvatarBuilder re-initialization on reset/draft restore
   const [builderKey, setBuilderKey] = useState<number>(1);
@@ -187,27 +225,15 @@ function AvatarPage() {
     () => initialSetup.savedDraft,
   );
 
-  // Sync state if navigation enters with mode === "fresh"
-  useEffect(() => {
-    if (mode === "fresh") {
-      if (draftStorageKey && typeof window !== "undefined") {
-        try {
-          localStorage.removeItem(draftStorageKey);
-        } catch (e) {
-          console.warn("Failed to clear local avatar draft:", e);
-        }
-      }
-      setSelectedStyle(null);
-      setBuilderSeed(profile?.handle || "spun-default");
-      setBuilderOptions({});
-      setCurrentConfig(null);
-      setPhase("style");
-      setIsDirty(false);
-      setShowDraftNotice(false);
-      setSavedDraft(null);
-      setBuilderKey((k) => k + 1);
+  // Helper to remove draft from localStorage
+  const removeDraft = useCallback(() => {
+    if (!draftStorageKey || typeof window === "undefined") return;
+    try {
+      localStorage.removeItem(draftStorageKey);
+    } catch (err) {
+      console.warn("Failed to remove avatar draft from localStorage:", err);
     }
-  }, [mode, draftStorageKey, profile?.handle]);
+  }, [draftStorageKey]);
 
   // Persist draft to localStorage
   const persistDraft = useCallback(
@@ -222,6 +248,23 @@ function AvatarPage() {
     [draftStorageKey],
   );
 
+  // Sync state if navigation enters with mode === "fresh"
+  useEffect(() => {
+    if (mode === "fresh") {
+      removeDraft();
+      setSelectedStyle(null);
+      setBuilderSeed(profile?.handle || "spun-default");
+      setBuilderOptions({});
+      setCurrentConfig(null);
+      baselineConfigRef.current = null;
+      setPhase("style");
+      setIsDirty(false);
+      setShowDraftNotice(false);
+      setSavedDraft(null);
+      setBuilderKey((k) => k + 1);
+    }
+  }, [mode, removeDraft, profile?.handle]);
+
   // Draft banner actions:
   // 1. Resume: Dismiss notice, keep current restored draft
   const handleResumeDraft = () => {
@@ -230,9 +273,7 @@ function AvatarPage() {
 
   // 2. Start over: Clear draft, dismiss notice, respect original entry mode
   const handleStartOver = () => {
-    if (draftStorageKey && typeof window !== "undefined") {
-      localStorage.removeItem(draftStorageKey);
-    }
+    removeDraft();
     setShowDraftNotice(false);
     setSavedDraft(null);
 
@@ -241,11 +282,13 @@ function AvatarPage() {
       const detectedStyle =
         (existingConfig.style as string) || detectAvatarStyle(existingConfig) || "adventurer";
       const seed = (existingConfig.seed as string) || profile?.handle || "spun-default";
+      const originalProfileConfig = { ...existingConfig, style: detectedStyle, seed };
 
       setSelectedStyle(detectedStyle);
       setBuilderSeed(seed);
       setBuilderOptions(existingConfig);
-      setCurrentConfig({ ...existingConfig, style: detectedStyle, seed });
+      setCurrentConfig(originalProfileConfig);
+      baselineConfigRef.current = originalProfileConfig;
       setPhase("builder");
       setIsDirty(false);
     } else {
@@ -253,26 +296,43 @@ function AvatarPage() {
       setBuilderSeed(profile?.handle || "spun-default");
       setBuilderOptions({});
       setCurrentConfig(null);
+      baselineConfigRef.current = null;
       setPhase("style");
       setIsDirty(false);
     }
     setBuilderKey((k) => k + 1);
   };
 
-  // Builder option change handler
+  // Builder option change handler: only marks dirty and persists if an actual change was made!
   const handleBuilderChange = useCallback(
     (newConfig: { style: string; seed: string; [key: string]: unknown }) => {
       setCurrentConfig(newConfig);
-      setIsDirty(true);
-      persistDraft(newConfig);
+
+      if (!baselineConfigRef.current) {
+        baselineConfigRef.current = newConfig;
+        setIsDirty(false);
+        removeDraft();
+        return;
+      }
+
+      const baseline = baselineConfigRef.current;
+      const hasActualChange = !areConfigsEqual(newConfig, baseline);
+
+      setIsDirty(hasActualChange);
+
+      if (hasActualChange) {
+        persistDraft(newConfig);
+      } else {
+        // Changed back to original or no differences! Remove draft from storage
+        removeDraft();
+      }
     },
-    [persistDraft],
+    [persistDraft, removeDraft],
   );
 
   // StylePicker selection
   const handleSelectStyle = (styleKey: string) => {
     setSelectedStyle(styleKey);
-    setIsDirty(true);
   };
 
   // StylePicker -> Builder transition
@@ -281,7 +341,11 @@ function AvatarPage() {
     const seed = builderSeed || profile?.handle || "spun-default";
     const initialConf = { style: selectedStyle, seed, ...builderOptions };
     setCurrentConfig(initialConf);
-    persistDraft(initialConf);
+    if (!baselineConfigRef.current) {
+      baselineConfigRef.current = initialConf;
+    }
+    // Only save when an actual customization change occurs
+    setIsDirty(false);
     setPhase("builder");
   };
 
@@ -304,9 +368,8 @@ function AvatarPage() {
     setSaving(true);
     try {
       await updateAvatarConfig(user.id, config);
-      if (draftStorageKey && typeof window !== "undefined") {
-        localStorage.removeItem(draftStorageKey);
-      }
+      removeDraft();
+      baselineConfigRef.current = config;
       setIsDirty(false);
       toast.success("Avatar saved successfully!");
       navigate({ to: "/me" });
@@ -332,92 +395,56 @@ function AvatarPage() {
 
   const handleConfirmLeave = () => {
     setShowLeaveConfirm(false);
-    if (draftStorageKey && typeof window !== "undefined") {
-      try {
-        localStorage.removeItem(draftStorageKey);
-      } catch (e) {
-        console.warn("Failed to clear local avatar draft on leave:", e);
-      }
-    }
+    removeDraft();
     navigate({ to: "/me" });
   };
 
   return (
-    <div className="relative min-h-screen bg-canvas text-foreground flex flex-col justify-between px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl">
-        {/* Top bar with logo */}
-        <header className="mb-6 flex items-center px-1">
-          <div className="flex items-center gap-2.5">
-            <img src="/spun-logo.svg" alt="Spün mark" className="size-7" />
-            <span className="font-display text-lg font-semibold tracking-tight">Spün</span>
-          </div>
-        </header>
-
-        {/* Main Card */}
-        <div className="relative rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8 lg:p-10">
-          {/* Subtle Saved Draft Notice Banner */}
-          {showDraftNotice && (
-            <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-border bg-surface/80 px-4 py-3 text-sm">
-              <div className="flex items-center gap-2.5 text-foreground">
-                <Info className="size-4 text-primary shrink-0" />
-                <span>You have a saved draft. Continue where you left off?</span>
-              </div>
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleStartOver}
-                  className="text-xs text-muted-foreground hover:text-foreground h-8 px-2.5 cursor-pointer"
-                >
-                  Start over
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleResumeDraft}
-                  className="text-xs h-8 px-3 cursor-pointer font-medium"
-                >
-                  Resume
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Phase 1: Style Picker */}
-          {phase === "style" && (
-            <StylePicker
-              key="style-picker"
-              selectedStyle={selectedStyle}
-              onSelectStyle={handleSelectStyle}
-              onContinue={handleBuildAvatar}
-              onBack={handleBackClick}
-              showSkip={false}
-              stepLabel="Avatar Editor · Style"
-            />
-          )}
-
-          {/* Phase 2: Feature Rows Avatar Builder */}
-          {phase === "builder" && selectedStyle && (
-            <AvatarBuilder
-              key={`avatar-builder-${selectedStyle}-${builderKey}`}
-              style={selectedStyle}
-              seed={builderSeed}
-              initialOptions={builderOptions}
-              userHandle={profile?.handle || undefined}
-              onContinue={handleSave}
-              onChange={handleBuilderChange}
-              onBack={mode === "refine" ? handleBackClick : () => setPhase("style")}
-              showSkip={false}
-              continueLabel={saving ? "Saving…" : "Save"}
-              showContinueArrow={false}
-              continueDisabled={saving}
-              stepLabel="Avatar Editor · Customise"
-            />
-          )}
+    <div className="relative min-h-screen bg-canvas text-foreground flex flex-col">
+      {/* Spün logo + wordmark at its usual position: top left corner of the page */}
+      <header className="w-full px-4 sm:px-6 lg:px-8 pt-6 pb-2">
+        <div className="flex items-center gap-2.5">
+          <img src="/spun-logo.svg" alt="Spün mark" className="size-8" />
+          <span className="font-display text-xl font-semibold tracking-tight">Spün</span>
         </div>
-      </div>
+      </header>
+
+      {/* Main page content underneath logo: full screen, no card */}
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 flex flex-col">
+        {/* Phase 1: Style Picker */}
+        {phase === "style" && (
+          <StylePicker
+            key="style-picker"
+            selectedStyle={selectedStyle}
+            onSelectStyle={handleSelectStyle}
+            onContinue={handleBuildAvatar}
+            onBack={handleBackClick}
+            showSkip={false}
+            stepLabel="Avatar Editor · Style"
+          />
+        )}
+
+        {/* Phase 2: Feature Rows Avatar Builder */}
+        {phase === "builder" && selectedStyle && (
+          <AvatarBuilder
+            key={`avatar-builder-${selectedStyle}-${builderKey}`}
+            style={selectedStyle}
+            seed={builderSeed}
+            initialOptions={builderOptions}
+            userHandle={profile?.handle || undefined}
+            onContinue={handleSave}
+            onChange={handleBuilderChange}
+            onBack={mode === "refine" ? handleBackClick : () => setPhase("style")}
+            backIconType={mode === "refine" ? "close" : "back"}
+            showSkip={false}
+            continueLabel={saving ? "Saving…" : "Save"}
+            showContinueArrow={false}
+            continueDisabled={saving}
+            stepLabel="Avatar Editor · Customise"
+            className="flex-1"
+          />
+        )}
+      </main>
 
       {/* Confirmation Dialog: Unsaved changes on leave */}
       <Dialog open={showLeaveConfirm} onOpenChange={setShowLeaveConfirm}>
@@ -434,6 +461,37 @@ function AvatarPage() {
             </Button>
             <Button type="button" variant="destructive" onClick={handleConfirmLeave}>
               Leave
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Saved Draft Modal Dialog */}
+      <Dialog open={showDraftNotice} onOpenChange={setShowDraftNotice}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resume saved draft?</DialogTitle>
+            <DialogDescription>
+              You have an unsaved avatar draft from a previous session. Would you like to resume
+              where you left off or start fresh?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleStartOver}
+              className="cursor-pointer"
+            >
+              Start over
+            </Button>
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleResumeDraft}
+              className="cursor-pointer"
+            >
+              Resume draft
             </Button>
           </DialogFooter>
         </DialogContent>

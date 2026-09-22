@@ -1,22 +1,23 @@
-import { defineConfig } from "@tanstack/react-start/config";
+import { defineConfig } from "vite";
+import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import viteReact from "@vitejs/plugin-react";
 import tsConfigPaths from "vite-tsconfig-paths";
+import tailwindcss from "@tailwindcss/vite";
+import { spunApiPlugin } from "./src/server/apiPlugin";
 
 export default defineConfig({
-  vite: {
-    plugins: [tsConfigPaths()],
-    server: {
-      host: "0.0.0.0",
-      port: 3000,
-      strictPort: true,
+  server: {
+    host: "0.0.0.0",
+    port: 3000,
+    strictPort: true,
+    allowedHosts: true,
+    cors: true,
+    fs: {
+      allow: ["..", "/app/applet"],
     },
   },
-  tanstackStart: {
-    server: { entry: "src/server.ts" },
+  define: {
+    "process.env.TSS_ROUTER_BASEPATH": '""',
   },
-  nitro: {
-    preset: "cloudflare-worker",
-    output: {
-      dir: "dist",
-    },
-  },
+  plugins: [spunApiPlugin(), tsConfigPaths(), tailwindcss(), tanstackStart(), viteReact()],
 });

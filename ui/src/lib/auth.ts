@@ -2,12 +2,39 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type OAuthProvider = "google" | "discord" | "github";
 
+export function setRememberPreference(remember: boolean) {
+  if (typeof window === "undefined") return;
+  try {
+    if (remember) {
+      localStorage.setItem("spun_auth_remember", "true");
+      sessionStorage.removeItem("spun_auth_session_only");
+    } else {
+      localStorage.removeItem("spun_auth_remember");
+      sessionStorage.setItem("spun_auth_session_only", "true");
+      // Remove any persisted supabase tokens from localStorage
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && (k.startsWith("sb-") || k.includes("auth-token"))) {
+          localStorage.removeItem(k);
+        }
+      }
+    }
+  } catch (err) {
+    void err;
+  }
+}
+
 export function callbackUrl(next?: string) {
   const base = `${window.location.origin}/auth/callback`;
   return next ? `${base}?next=${encodeURIComponent(next)}` : base;
 }
 
-export async function signInWithProvider(provider: OAuthProvider, next = "/onboarding") {
+export async function signInWithProvider(
+  provider: OAuthProvider,
+  next = "/onboarding",
+  remember = true,
+) {
+  setRememberPreference(remember);
   const { error } = await supabase.auth.signInWithOAuth({
     provider,
     options: { redirectTo: callbackUrl(next) },
@@ -15,7 +42,8 @@ export async function signInWithProvider(provider: OAuthProvider, next = "/onboa
   if (error) throw error;
 }
 
-export async function signInWithEmail(email: string, password: string) {
+export async function signInWithEmail(email: string, password: string, remember = true) {
+  setRememberPreference(remember);
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
   if (!data.user.email_confirmed_at) {
@@ -32,6 +60,7 @@ export async function signUpWithEmail(
   displayName: string,
   next = "/onboarding",
 ) {
+  setRememberPreference(true);
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -57,6 +86,14 @@ export async function updatePassword(password: string) {
 }
 
 export async function signOut() {
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.removeItem("spun_auth_remember");
+      sessionStorage.removeItem("spun_auth_session_only");
+    } catch (err) {
+      void err;
+    }
+  }
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }

@@ -20,16 +20,15 @@ export interface Env {
   ADMIN_API_KEY: string;
 }
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "https://sso.byspun.xyz",
-  "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Spun-Admin-Key",
-  "Access-Control-Allow-Credentials": "true",
-};
-
-function cors(response: Response): Response {
+function cors(response: Response, request?: Request): Response {
   const headers = new Headers(response.headers);
-  for (const [k, v] of Object.entries(CORS_HEADERS)) headers.set(k, v);
+  const origin = request?.headers.get("origin") || "*";
+  headers.set("Access-Control-Allow-Origin", origin);
+  headers.set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Spun-Admin-Key");
+  if (origin !== "*") {
+    headers.set("Access-Control-Allow-Credentials", "true");
+  }
   return new Response(response.body, { status: response.status, headers });
 }
 
@@ -48,7 +47,16 @@ export default {
 
     // Preflight
     if (request.method === "OPTIONS") {
-      return new Response(null, { status: 204, headers: CORS_HEADERS });
+      const origin = request.headers.get("origin") || "*";
+      const headers = new Headers({
+        "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Spun-Admin-Key",
+      });
+      headers.set("Access-Control-Allow-Origin", origin);
+      if (origin !== "*") {
+        headers.set("Access-Control-Allow-Credentials", "true");
+      }
+      return new Response(null, { status: 204, headers });
     }
 
     let response: Response;
@@ -114,6 +122,6 @@ export default {
       response = notFound();
     }
 
-    return cors(response);
+    return cors(response, request);
   },
 };

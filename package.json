@@ -2,13 +2,21 @@
   "name": "spun-auth",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "ui",
+    "api"
+  ],
   "scripts": {
-    "dev:ui": "cd ui && bun run dev",
-    "dev:api": "cd api && bun run dev",
-    "build:ui": "cd ui && bun run build",
-    "deploy:api": "cd api && bun run deploy",
-    "deploy:ui": "cd ui && bun run deploy",
+    "dev": "npm --prefix ui run dev",
+    "build": "npm --prefix ui run build",
+    "preview": "npm --prefix ui run preview",
+    "lint": "npm --prefix ui run lint",
+    "dev:ui": "cd ui && vite dev",
+    "dev:api": "cd api && wrangler dev",
+    "build:ui": "cd ui && vite build",
+    "deploy:api": "cd api && wrangler deploy",
+    "deploy:ui": "cd ui && wrangler deploy",
     "deploy": "bun run deploy:api && bun run deploy:ui",
-    "format": "cd ui && bun run format"
+    "format": "cd ui && prettier --write ."
   }
 }

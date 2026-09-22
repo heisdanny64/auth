@@ -10,23 +10,34 @@ import { getProfile, type ProfileRecord } from "@/lib/profiles";
 import { resolveProfileAvatarDataUri } from "@/lib/dicebear";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AuthorizeSearch = {
+  client_id?: string | undefined;
+  redirect_uri?: string | undefined;
+  state?: string | undefined;
+  prompt?: "none" | "login" | undefined;
+  auth_completed?: "1" | undefined;
+};
+
 export const Route = createFileRoute("/authorize")({
   ssr: false,
-  validateSearch: (search: Record<string, unknown> = {}) => ({
-    client_id: typeof search?.client_id === "string" ? search.client_id : undefined,
-    redirect_uri: typeof search?.redirect_uri === "string" ? search.redirect_uri : undefined,
-    state: typeof search?.state === "string" ? search.state : undefined,
-    prompt: search?.prompt === "none" || search?.prompt === "login" ? search.prompt : undefined,
+  validateSearch: (search: Record<string, unknown> = {}): AuthorizeSearch => ({
+    client_id: typeof search["client_id"] === "string" ? search["client_id"] : undefined,
+    redirect_uri: typeof search["redirect_uri"] === "string" ? search["redirect_uri"] : undefined,
+    state: typeof search["state"] === "string" ? search["state"] : undefined,
+    prompt:
+      search["prompt"] === "none" || search["prompt"] === "login"
+        ? (search["prompt"] as "none" | "login")
+        : undefined,
     auth_completed:
-      search?.auth_completed === "1" ||
-      search?.auth_completed === 1 ||
-      search?.auth_completed === "true" ||
-      search?.auth_completed === true
+      search["auth_completed"] === "1" ||
+      search["auth_completed"] === 1 ||
+      search["auth_completed"] === "true" ||
+      search["auth_completed"] === true
         ? "1"
         : undefined,
   }),
   loader: async ({ location }) => {
-    const s = location?.search ?? {};
+    const s = (location?.search ?? {}) as AuthorizeSearch;
     if (!s.client_id || !s.redirect_uri) {
       return { client: null, error: true, user: null, profile: null };
     }
@@ -240,7 +251,7 @@ function Authorize() {
           method: "POST",
           headers: {
             "content-type": "application/json",
-            "authorization": `Bearer ${accessToken}`,
+            authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({
             client_id: search.client_id,
@@ -365,21 +376,6 @@ function Authorize() {
     }
   }
 
-  function handleCancel() {
-    if (!search?.redirect_uri) {
-      navigate({ to: "/" });
-      return;
-    }
-    try {
-      const target = new URL(search.redirect_uri);
-      target.searchParams.set("error", "access_denied");
-      if (search?.state) target.searchParams.set("state", search.state);
-      window.location.assign(target.toString());
-    } catch {
-      navigate({ to: "/" });
-    }
-  }
-
   if (view === "error") {
     return <HardErrorScreen />;
   }
@@ -473,8 +469,8 @@ function Authorize() {
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-col gap-3">
+        {/* Action button */}
+        <div>
           <Button
             id="continue-button"
             type="button"
@@ -485,19 +481,7 @@ function Authorize() {
             disabled={pending}
           >
             {pending ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-            {pending ? "Continuing…" : `Continue as @${profile.handle}`}
-          </Button>
-
-          <Button
-            id="cancel-button"
-            type="button"
-            variant="outline"
-            size="xl"
-            className="w-full"
-            onClick={handleCancel}
-            disabled={pending}
-          >
-            Cancel
+            {pending ? "Continuing…" : "Continue"}
           </Button>
         </div>
 

@@ -3,13 +3,19 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { signInWithProvider, type OAuthProvider } from "@/lib/auth";
 
-export function SocialRow({ next = "/onboarding" }: { next?: string }) {
+export function SocialRow({
+  next = "/onboarding",
+  remember = true,
+}: {
+  next?: string;
+  remember?: boolean;
+}) {
   const [pending, setPending] = useState<OAuthProvider | null>(null);
 
   async function connect(provider: OAuthProvider) {
     setPending(provider);
     try {
-      await signInWithProvider(provider, next);
+      await signInWithProvider(provider, next, remember);
     } catch (error) {
       setPending(null);
       toast.error(error instanceof Error ? error.message : `Could not sign in with ${provider}`);

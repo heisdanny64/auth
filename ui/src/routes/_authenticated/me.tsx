@@ -245,14 +245,12 @@ function Account() {
     debounceMs: 200,
   });
 
-  const oauthAvatarUrl =
-    (user?.user_metadata?.["avatar_url"] as string | undefined) ||
-    (user?.user_metadata?.["picture"] as string | undefined) ||
-    null;
-
-  const avatarSrc =
-    resolveProfileAvatarDataUri(profile?.avatar_config, currentHandle || currentDisplayName, 160) ||
-    oauthAvatarUrl;
+  // Avatar is strictly from DiceBear avatar_config. Never auth provider avatars.
+  const avatarSrc = resolveProfileAvatarDataUri(
+    profile?.avatar_config,
+    currentHandle || currentDisplayName,
+    160,
+  );
 
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 

@@ -10,14 +10,26 @@ import { destinationForUser } from "@/lib/profiles";
 import { useSession } from "@/hooks/useSession";
 import { safeNavigate } from "@/lib/navigation";
 
+export type IndexSearch = {
+  returnTo?: string | undefined;
+  next?: string | undefined;
+  client_id?: string | undefined;
+  redirect_uri?: string | undefined;
+  state?: string | undefined;
+  prompt?: "none" | "login" | undefined;
+};
+
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown> = {}) => ({
-    returnTo: typeof search?.returnTo === "string" ? search.returnTo : undefined,
-    next: typeof search?.next === "string" ? search.next : undefined,
-    client_id: typeof search?.client_id === "string" ? search.client_id : undefined,
-    redirect_uri: typeof search?.redirect_uri === "string" ? search.redirect_uri : undefined,
-    state: typeof search?.state === "string" ? search.state : undefined,
-    prompt: search?.prompt === "none" || search?.prompt === "login" ? search.prompt : undefined,
+  validateSearch: (search: Record<string, unknown> = {}): IndexSearch => ({
+    returnTo: typeof search["returnTo"] === "string" ? search["returnTo"] : undefined,
+    next: typeof search["next"] === "string" ? search["next"] : undefined,
+    client_id: typeof search["client_id"] === "string" ? search["client_id"] : undefined,
+    redirect_uri: typeof search["redirect_uri"] === "string" ? search["redirect_uri"] : undefined,
+    state: typeof search["state"] === "string" ? search["state"] : undefined,
+    prompt:
+      search["prompt"] === "none" || search["prompt"] === "login"
+        ? (search["prompt"] as "none" | "login")
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -40,6 +52,7 @@ export const Route = createFileRoute("/")({
 
 function SignIn() {
   const [pending, setPending] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const navigate = useNavigate();
   const rawSearch = Route.useSearch();
   const search = rawSearch ?? {};
@@ -91,9 +104,14 @@ function SignIn() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    const remember = form.get("remember") === "on";
     setPending(true);
     try {
-      await signInWithEmail(String(form.get("email") ?? ""), String(form.get("password") ?? ""));
+      await signInWithEmail(
+        String(form.get("email") ?? ""),
+        String(form.get("password") ?? ""),
+        remember,
+      );
       if (search?.client_id && search?.redirect_uri) {
         navigate({
           to: "/authorize",
@@ -122,8 +140,8 @@ function SignIn() {
   return (
     <AuthShell
       eyebrow="Sign in"
-      title="Welcome back to Spün"
-      subtitle="Your sessions, decks and saved mixes are exactly where you left them."
+      title="Sign in to Spün"
+      subtitle="Good to see you again. Let's get you signed in."
       footer={
         <>
           New to Spün?{" "}
@@ -143,7 +161,7 @@ function SignIn() {
       }
     >
       <form className="space-y-5" onSubmit={onSubmit}>
-        <SocialRow next={customReturnTo ?? "/onboarding"} />
+        <SocialRow next={customReturnTo ?? "/onboarding"} remember={rememberMe} />
         <Field label="Email" type="email" name="email" placeholder="you@studio.com" required />
         <Field
           label="Password"
@@ -157,11 +175,13 @@ function SignIn() {
             </Link>
           }
         />
-        <label className="flex items-center gap-2.5 text-sm text-muted-foreground">
+        <label className="flex items-center gap-2.5 text-sm text-muted-foreground cursor-pointer select-none">
           <input
             type="checkbox"
             name="remember"
-            className="size-4 rounded border-border bg-surface accent-[oklch(0.79_0.152_72)]"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="size-4 rounded border-border bg-surface accent-[oklch(0.79_0.152_72)] cursor-pointer"
           />
           Keep me signed in
         </label>

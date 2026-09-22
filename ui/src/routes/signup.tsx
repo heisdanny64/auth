@@ -8,12 +8,22 @@ import { toast } from "sonner";
 import { signUpWithEmail } from "@/lib/auth";
 import { safeNavigate } from "@/lib/navigation";
 
+export type SignUpSearch = {
+  client_id?: string | undefined;
+  redirect_uri?: string | undefined;
+  state?: string | undefined;
+  prompt?: "none" | "login" | undefined;
+};
+
 export const Route = createFileRoute("/signup")({
-  validateSearch: (search: Record<string, unknown> = {}) => ({
-    client_id: typeof search?.client_id === "string" ? search.client_id : undefined,
-    redirect_uri: typeof search?.redirect_uri === "string" ? search.redirect_uri : undefined,
-    state: typeof search?.state === "string" ? search.state : undefined,
-    prompt: search?.prompt === "none" || search?.prompt === "login" ? search.prompt : undefined,
+  validateSearch: (search: Record<string, unknown> = {}): SignUpSearch => ({
+    client_id: typeof search["client_id"] === "string" ? search["client_id"] : undefined,
+    redirect_uri: typeof search["redirect_uri"] === "string" ? search["redirect_uri"] : undefined,
+    state: typeof search["state"] === "string" ? search["state"] : undefined,
+    prompt:
+      search["prompt"] === "none" || search["prompt"] === "login"
+        ? (search["prompt"] as "none" | "login")
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -114,8 +124,8 @@ function SignUp() {
   return (
     <AuthShell
       eyebrow="Sign up"
-      title="Create your Spün account"
-      subtitle="One account for every deck, session and collaborator you work with."
+      title="Get started with Spün"
+      subtitle="One account for everything Spün"
       footer={
         <>
           Already have an account?{" "}
@@ -147,7 +157,17 @@ function SignUp() {
           required
         />
         <p className="text-xs leading-relaxed text-muted-foreground">
-          By continuing you agree to the Spün Terms of Service and Privacy Policy.
+          By signing up, you agree to our{" "}
+          <Link to="/legal/terms" className="text-primary hover:text-primary/80 transition-colors">
+            Terms
+          </Link>{" "}
+          &amp;{" "}
+          <Link
+            to="/legal/privacy"
+            className="text-primary hover:text-primary/80 transition-colors"
+          >
+            Privacy Policy
+          </Link>
         </p>
         <Button type="submit" variant="hero" size="xl" className="w-full" disabled={pending}>
           {pending ? "Creating account…" : "Create account"}

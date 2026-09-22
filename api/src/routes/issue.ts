@@ -39,7 +39,10 @@ export async function handleIssue(request: Request, env: Env): Promise<Response>
   if (clientError || !client) return json({ error: "invalid_client" }, 401);
 
   const allowed = Array.isArray(client.allowed_redirect_uris) ? client.allowed_redirect_uris : [];
-  if (!allowed.includes(redirect_uri)) return json({ error: "redirect_uri_not_allowed" }, 403);
+  const isAllowed = allowed.some(
+    (u: string) => u === redirect_uri || u.replace(/\/$/, "") === redirect_uri.replace(/\/$/, ""),
+  );
+  if (!isAllowed) return json({ error: "redirect_uri_not_allowed" }, 403);
 
   // Verify the user has a completed profile
   const { data: profile } = await supabase

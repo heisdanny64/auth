@@ -247,20 +247,6 @@ export function resolveProfileAvatarDataUri(
 ): string | null {
   if (!config) return null;
 
-  // Direct image URL or data URI support (e.g. Google profile picture, uploaded avatar)
-  if (typeof config === "string") {
-    const trimmed = config.trim();
-    if (
-      trimmed.startsWith("http://") ||
-      trimmed.startsWith("https://") ||
-      trimmed.startsWith("data:image/") ||
-      trimmed.startsWith("blob:") ||
-      trimmed.startsWith("/")
-    ) {
-      return trimmed;
-    }
-  }
-
   let parsedConfig: Record<string, unknown>;
   if (typeof config === "string") {
     try {
@@ -274,21 +260,7 @@ export function resolveProfileAvatarDataUri(
     return null;
   }
 
-  // Check if parsedConfig contains a direct image URL property
-  for (const urlKey of ["avatar_url", "avatarUrl", "picture", "url", "src", "image"]) {
-    const val = parsedConfig[urlKey];
-    if (
-      typeof val === "string" &&
-      (val.startsWith("http://") ||
-        val.startsWith("https://") ||
-        val.startsWith("data:image/") ||
-        val.startsWith("blob:") ||
-        val.startsWith("/"))
-    ) {
-      return val;
-    }
-  }
-
+  // Spün Auth avatars are strictly DiceBear only - never external URLs or auth provider avatars
   const style = detectAvatarStyle(parsedConfig);
   if (!style) return null;
   const seed =
@@ -456,6 +428,12 @@ export const BACKGROUND_PALETTE = [
 export const OPTIONAL_FEATURES = new Set([
   "rearhair",
   "rear_hair",
+  "fronthair",
+  "front_hair",
+  "sideburns",
+  "sideburn",
+  "hairaccessories",
+  "details",
   "beard",
   "facialhair",
   "facial",
@@ -474,6 +452,8 @@ export const OPTIONAL_FEATURES = new Set([
   "mask",
   "gesture",
   "gestures",
+  "clothesgraphic",
+  "graphic",
 ]);
 
 export const CORE_FEATURES = new Set([
@@ -532,11 +512,28 @@ export const FEATURE_ORDER = [
   "shirt",
   "gesture",
   "gestures",
+  "stroke",
+  "ink",
   "background",
 ];
 
-export function featureNameFromOption(optionKey: string): string {
+export function featureNameFromOption(optionKey: string, style?: string): string {
   const clean = optionKey.replace(/(Variant|Color|Probability)$/, "").toLowerCase();
+  if (style === "avataaars" && (clean === "top" || clean === "hat")) {
+    return "hair";
+  }
+  // Front hair, rear hair, sideburns and the likes should be sub tabs of hair across all styles
+  if (
+    clean === "fronthair" ||
+    clean === "front_hair" ||
+    clean === "rearhair" ||
+    clean === "rear_hair" ||
+    clean === "sideburns" ||
+    clean === "sideburn" ||
+    clean === "hairaccessories"
+  ) {
+    return "hair";
+  }
   if (clean === "base") return "skin";
   if (clean === "clothes") return "clothing";
   if (clean === "shirt") return "clothing";
@@ -560,4 +557,75 @@ export function paletteFor(key: string): string[] {
   if (lower.includes("hair")) return HAIR_PALETTE;
   if (lower.includes("background")) return BACKGROUND_PALETTE;
   return GENERAL_PALETTE;
+}
+
+function normalizeOptionString(s: string): string {
+  const lower = s.trim().toLowerCase();
+  return lower.startsWith("#") ? lower.slice(1) : lower;
+}
+
+function toComparableOptionValue(val: unknown): unknown {
+  if (val === undefined || val === null || val === "") return undefined;
+  if (Array.isArray(val)) {
+    const filtered = val
+      .filter((v) => v !== undefined && v !== null && v !== "")
+      .map((v) => (typeof v === "string" ? normalizeOptionString(v) : v));
+    if (filtered.length === 0) return undefined;
+    if (filtered.length === 1) return filtered[0];
+    return filtered.slice().sort();
+  }
+  if (typeof val === "string") {
+    return normalizeOptionString(val);
+  }
+  return val;
+}
+
+/**
+ * Compare two avatar configuration objects to see if an actual visual or option change exists.
+ * Accurately handles normalized hex colors (#abc vs abc), array/scalar equivalents (['opt'] vs 'opt'),
+ * and probability flag defaults (0 vs undefined).
+ */
+export function areConfigsEqual(
+  a: Record<string, unknown> | null | undefined,
+  b: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+
+  if (String(a.style || "") !== String(b.style || "")) return false;
+  if (String(a.seed || "") !== String(b.seed || "")) return false;
+
+  const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
+
+  for (const key of allKeys) {
+    if (key === "style" || key === "seed") continue;
+
+    const valA = a[key];
+    const valB = b[key];
+
+    if (key.endsWith("Probability")) {
+      const isZeroA = valA === 0 || valA === undefined || valA === null;
+      const isZeroB = valB === 0 || valB === undefined || valB === null;
+      if (isZeroA && isZeroB) continue;
+      if (valA !== valB) return false;
+      continue;
+    }
+
+    const normA = toComparableOptionValue(valA);
+    const normB = toComparableOptionValue(valB);
+
+    if (normA === normB) continue;
+
+    if (Array.isArray(normA) && Array.isArray(normB)) {
+      if (normA.length !== normB.length) return false;
+      for (let i = 0; i < normA.length; i++) {
+        if (normA[i] !== normB[i]) return false;
+      }
+      continue;
+    }
+
+    return false;
+  }
+
+  return true;
 }

@@ -177,6 +177,7 @@ function Onboarding() {
                   setPhase("finish");
                 }}
                 onBack={() => setPhase("style")}
+                backIconType="back"
                 onSkip={handleSkipAvatar}
                 showSkip={true}
                 continueLabel="Continue"
